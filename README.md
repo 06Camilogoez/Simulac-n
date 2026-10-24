@@ -136,10 +136,9 @@ Simulación/
 │   ├── style.css                         # Estilos
 │   └── app.js                            # Logica de juego y simulador
 ├── results/                              # Graficos generados
-├── Apellido_Nombre_Montecarlo.docx       # Informe tecnico
-├── Apellido_Nombre_Montecarlo.doc        # Copia de entrega
-├── Apellido_Nombre_Montecarlo_Simulacion.xlsx # Libro Excel
-├── GUION_VIDEO_PRESENTACION.md           # Guion para el video (5 min)
+├── ValenciaGoez_WilfranCamilo_Montecarlo.docx # Informe tecnico
+├── ValenciaGoez_WilfranCamilo_Montecarlo.doc  # Copia de compatibilidad
+├── ValenciaGoez_WilfranCamilo_Montecarlo_Simulacion.xlsx # Libro Excel
 ├── generate_document.py                  # Generador del documento
 ├── web_server.py                         # Servidor local
 ├── run_all.py                            # Script de ejecucion general
