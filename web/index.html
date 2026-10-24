@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Yahtzee - 2 Jugadores</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo-group">
+      <div>
+        <h1>YAHTZEE <span>SIMULADOR</span></h1>
+        <p class="subtitle">Simulación de 2 Jugadores y Cadenas de Markov</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="btn-tab-game" class="nav-tab active">Juego 2 Jugadores</button>
+      <button id="btn-tab-markov" class="nav-tab">Análisis de Markov</button>
+      <button id="btn-tab-mc" class="nav-tab">Simulador Monte Carlo</button>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <!-- TAB 1: JUEGO -->
+    <section id="section-game" class="tab-content active">
+      <div class="game-status-bar glass-panel">
+        <div class="current-turn-badge" id="current-turn-indicator">
+          <span class="pulse-dot"></span>
+          <span id="turn-text">Turno: Jugador 1 (Ronda 1/13)</span>
+        </div>
+        <div class="roll-tracker">
+          <span class="roll-label">Lanzamientos restantes:</span>
+          <div class="roll-pills">
+            <span class="pill" id="pill-1">1</span>
+            <span class="pill" id="pill-2">2</span>
+            <span class="pill" id="pill-3">3</span>
+          </div>
+        </div>
+        <div class="game-controls">
+          <button id="btn-new-game" class="btn btn-secondary">Nueva Partida</button>
+        </div>
+      </div>
+
+      <div class="dice-arena glass-panel">
+        <div class="arena-header">
+          <h3>Zona de Lanzamiento (Distribución U{1, 6})</h3>
+          <p class="arena-hint">Haz clic en los dados para conservarlos entre lanzamientos</p>
+        </div>
+
+        <div class="dice-container" id="dice-container">
+          <div class="dice-slot" data-index="0">
+            <div class="die face-1" id="die-0">
+              <span class="pip"></span>
+            </div>
+            <span class="die-label">Dado 1</span>
+          </div>
+          <div class="dice-slot" data-index="1">
+            <div class="die face-2" id="die-1">
+              <span class="pip"></span><span class="pip"></span>
+            </div>
+            <span class="die-label">Dado 2</span>
+          </div>
+          <div class="dice-slot" data-index="2">
+            <div class="die face-3" id="die-2">
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            </div>
+            <span class="die-label">Dado 3</span>
+          </div>
+          <div class="dice-slot" data-index="3">
+            <div class="die face-4" id="die-3">
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            </div>
+            <span class="die-label">Dado 4</span>
+          </div>
+          <div class="dice-slot" data-index="4">
+            <div class="die face-5" id="die-4">
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            </div>
+            <span class="die-label">Dado 5</span>
+          </div>
+        </div>
+
+        <div class="arena-footer">
+          <button id="btn-roll" class="btn btn-primary pulse-btn">LANZAR DADOS</button>
+          <div id="roll-message" class="roll-message">Presiona 'Lanzar Dados' para iniciar el turno</div>
+        </div>
+      </div>
+
+      <div class="scorecards-grid">
+        <div class="scorecard-card glass-panel" id="card-p1">
+          <div class="player-header p1-header">
+            <div class="player-avatar">J1</div>
+            <div>
+              <h2 id="p1-name">Jugador 1</h2>
+              <span class="score-badge" id="p1-total-badge">Total: 0 pts</span>
+            </div>
+          </div>
+          <div class="scorecard-table-wrapper">
+            <table class="scorecard-table" id="table-p1">
+              <thead>
+                <tr>
+                  <th>Categoría</th>
+                  <th>Regla</th>
+                  <th>Pts</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="scorecard-card glass-panel" id="card-p2">
+          <div class="player-header p2-header">
+            <div class="player-avatar">J2</div>
+            <div>
+              <h2 id="p2-name">Jugador 2</h2>
+              <span class="score-badge" id="p2-total-badge">Total: 0 pts</span>
+            </div>
+          </div>
+          <div class="scorecard-table-wrapper">
+            <table class="scorecard-table" id="table-p2">
+              <thead>
+                <tr>
+                  <th>Categoría</th>
+                  <th>Regla</th>
+                  <th>Pts</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MARKOV -->
+    <section id="section-markov" class="tab-content">
+      <div class="glass-panel markov-container">
+        <h2>Justificación Teórica: Cadenas de Markov (DTMC)</h2>
+        <p class="section-intro">
+          El proceso de relanzar dados buscando una combinación específica como Yahtzee
+          cumple la propiedad de Markov: la distribución de probabilidad en el tiro siguiente
+          depende únicamente del estado actual (dados retenidos), y no de los lanzamientos previos.
+        </p>
+
+        <div class="markov-cards-grid">
+          <div class="markov-card">
+            <h3>Espacio de Estados S</h3>
+            <ul class="state-list">
+              <li><span class="state-chip s1">E1</span> <strong>1 dado:</strong> Todos diferentes (se relanzan 4 dados).</li>
+              <li><span class="state-chip s2">E2</span> <strong>2 dados:</strong> Pareja (se relanzan 3 dados).</li>
+              <li><span class="state-chip s3">E3</span> <strong>3 dados:</strong> Trío (se relanzan 2 dados).</li>
+              <li><span class="state-chip s4">E4</span> <strong>4 dados:</strong> Póker (se relanza 1 dado).</li>
+              <li><span class="state-chip s5">E5</span> <strong>5 dados:</strong> Yahtzee (Estado absorbente).</li>
+            </ul>
+          </div>
+
+          <div class="markov-card">
+            <h3>Probabilidad por Lanzamiento</h3>
+            <div class="prob-step-bars">
+              <div class="prob-step">
+                <span class="step-label">Tiro 1:</span>
+                <div class="progress-track"><div class="progress-fill" style="width: 1.5%;"></div></div>
+                <span class="step-val">0.077%</span>
+              </div>
+              <div class="prob-step">
+                <span class="step-label">Tiro 2:</span>
+                <div class="progress-track"><div class="progress-fill" style="width: 26%;"></div></div>
+                <span class="step-val">1.312%</span>
+              </div>
+              <div class="prob-step">
+                <span class="step-label">Tiro 3:</span>
+                <div class="progress-track"><div class="progress-fill" style="width: 95%;"></div></div>
+                <span class="step-val">4.726%</span>
+              </div>
+            </div>
+            <p class="prob-note">La retención selectiva incrementa la probabilidad de éxito en cada etapa.</p>
+          </div>
+        </div>
+
+        <div class="matrix-table-wrapper">
+          <h3>Matriz de Transición P</h3>
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>Estado Actual \ Siguiente</th>
+                <th>E1</th>
+                <th>E2</th>
+                <th>E3</th>
+                <th>E4</th>
+                <th>E5</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>E1</strong></td><td>0.2222</td><td>0.4630</td><td>0.2315</td><td>0.0772</td><td class="target-cell">0.0062</td></tr>
+              <tr><td><strong>E2</strong></td><td>0.0000</td><td>0.5787</td><td>0.3472</td><td>0.0694</td><td class="target-cell">0.0046</td></tr>
+              <tr><td><strong>E3</strong></td><td>0.0000</td><td>0.0000</td><td>0.6944</td><td>0.2778</td><td class="target-cell">0.0278</td></tr>
+              <tr><td><strong>E4</strong></td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.8333</td><td class="target-cell">0.1667</td></tr>
+              <tr class="absorb-row"><td><strong>E5</strong></td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td class="absorb-cell">1.0000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MONTE CARLO -->
+    <section id="section-mc" class="tab-content">
+      <div class="glass-panel mc-container">
+        <h2>Simulador Monte Carlo</h2>
+        <p class="section-intro">Simulación de partidas simultáneas para observar la convergencia estadística de los puntajes y victorias.</p>
+
+        <div class="mc-dashboard">
+          <div class="mc-config-panel">
+            <label for="mc-runs-input">Número de partidas:</label>
+            <div class="input-action-row">
+              <select id="mc-runs-input" class="select-input">
+                <option value="500">500 partidas</option>
+                <option value="2000" selected>2,000 partidas</option>
+                <option value="5000">5,000 partidas</option>
+              </select>
+              <button id="btn-run-sim" class="btn btn-primary">Ejecutar Simulación</button>
+            </div>
+            <div id="sim-progress-bar" class="sim-progress-wrapper" style="display: none;">
+              <div class="sim-progress-track"><div id="sim-progress-fill" class="sim-progress-fill"></div></div>
+              <span id="sim-progress-text">Simulando...</span>
+            </div>
+          </div>
+
+          <div class="mc-results-grid">
+            <div class="metric-card">
+              <span class="metric-title">Puntaje Medio J1</span>
+              <span class="metric-value" id="res-mean-j1">--</span>
+              <span class="metric-desc">Desv. Est: <strong id="res-std-j1">--</strong></span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-title">Puntaje Medio J2</span>
+              <span class="metric-value" id="res-mean-j2">--</span>
+              <span class="metric-desc">Desv. Est: <strong id="res-std-j2">--</strong></span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-title">Tasa de Victorias</span>
+              <span class="metric-value" id="res-winrates">-- / --</span>
+              <span class="metric-desc">J1 vs J2</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-title">Tasa de Éxito Yahtzee</span>
+              <span class="metric-value" id="res-yahtzee-rate">--</span>
+              <span class="metric-desc">Frecuencia por partida</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="game-over-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog glass-panel">
+      <h2 id="modal-winner-title">Fin de la Partida</h2>
+      <p id="modal-winner-desc">Resultado final</p>
+      <div class="modal-scores">
+        <div class="modal-score-box">
+          <span class="player-lbl" id="modal-p1-label">Jugador 1</span>
+          <span class="score-lbl" id="modal-p1-score">0</span>
+        </div>
+        <div class="vs-divider">VS</div>
+        <div class="modal-score-box">
+          <span class="player-lbl" id="modal-p2-label">Jugador 2</span>
+          <span class="score-lbl" id="modal-p2-score">0</span>
+        </div>
+      </div>
+      <button id="btn-modal-restart" class="btn btn-primary">Nueva Partida</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>Simulación de Yahtzee - 2 Jugadores | Monte Carlo y Cadenas de Markov</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
