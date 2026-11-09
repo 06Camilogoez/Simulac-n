@@ -1,171 +1,97 @@
-# Simulacion de Yahtzee Clasico (2 Jugadores)
-## Modelado Estocastico mediante Distribucion Uniforme Discreta, Cadenas de Markov y Metodo Monte Carlo
+# Modelado Oculto de Markov (HMM) para Diagnostico y Mantenimiento Predictivo Industrial
 
-Repositorio correspondiente a la Actividad Didactica 2 - M1 de la asignatura Simulacion de Procesos. Contiene la especificacion formal, modelado matematico, implementacion en Python, libro de simulacion en Excel, informe academico y entorno web de prueba.
+Proyecto de investigacion y simulacion estocastica conforme a estandares de rigor cientifico para publicaciones indexadas Q1 (Scopus / Web of Science).
 
----
-
-## Contenido
-1. [Descripcion del Problema](#descripcion-del-problema)
-2. [Metodologia USA, MODIFICA y CREA](#metodologia-usa-modifica-y-crea)
-3. [Fundamento Matematico](#fundamento-matematico)
-   - [Distribucion Uniforme Discreta](#1-distribucion-uniforme-discreta-u1-6)
-   - [Justificacion del Modelo de Markov (DTMC)](#2-justificacion-del-modelo-de-markov-dtmc)
-   - [Matriz de Transicion](#3-matriz-de-transicion-p)
-4. [Resultados y Teoria de los Grandes Numeros](#resultados-y-teoria-de-los-grandes-numeros)
-5. [Estructura del Proyecto](#estructura-del-proyecto)
-6. [Instalacion y Ejecucion](#instalacion-y-ejecucion)
+**Autor:** Wilfran Camilo Valencia Goez  
+**Asignatura:** Simulacion de Procesos Estocasticos  
+**Institucion:** Institucion Universitaria Digital de Antioquia  
 
 ---
 
-## Descripcion del Problema
-El juego de Yahtzee clasico consiste en simular hasta tres lanzamientos de cinco dados de seis caras en cada turno a lo largo de 13 rondas por jugador. Los jugadores pueden retener dados entre lanzamientos sucesivos y anotar sus resultados en una tarjeta dividida en:
-- Seccion Superior: Unos, Doses, Treses, Cuatros, Cincos, Seises (bonificacion de +35 puntos si la suma es >= 63 pts).
-- Seccion Inferior: Trio, Poker, Full House (25 pts), Escalera Menor (30 pts), Escalera Mayor (40 pts), Yahtzee (50 pts) y Azar (suma libre).
+## 1. Descripcion del Problema y Objetivos
+
+En sistemas mecanicos rotativos (rodamientos, chumaceras y cajas de transmision), la degradacion fisica interna (desgaste microscopico por fatiga, fisuracion y falla severa) constituye un **estado latente no observable directamente** sin detener la operacion de la planta. 
+
+Este proyecto modela, implementa y analiza experimentalmente un **Modelo Oculto de Markov (HMM)** de primer orden $\lambda = (S, V, A, B, \pi)$ capaz de inferir y predecir el estado de salud mecanica a partir de mediciones externas ruidosas (vibracion y temperatura).
+
+### Preguntas de Investigacion Abordadas
+* **P1:** Como representar formalmente el proceso de desgaste mecanico e inobservabilidad mediante un HMM.
+* **P2:** Cual es la influencia cuantitativa de las matrices $A$ (transicion) y $B$ (emision) en el tiempo hasta falla y en la exactitud del diagnostico.
+* **P3:** Que tan sensible y reproducible es el algoritmo de Viterbi frente a sobrecargas mecanicas y ruido sensorial.
 
 ---
 
-## Metodologia USA, MODIFICA y CREA
+## 2. Formulacion Matematica del Modelo
 
-El proyecto fue estructurado bajo las tres etapas de aprendizaje:
+### Espacio de Estados Ocultos ($S$)
+$$S = \{S_0: \text{Operacion Normal / Sano}, S_1: \text{Degradacion Incipiente}, S_2: \text{Falla Severa / Critica}\}$$
 
-1. **USA (Base suministrada):**
-   - Uso de las reglas oficiales de Yahtzee y su sistema de 13 categorias de puntuacion.
-   - Modelo estocastico inicial con distribucion uniforme discreta U{1, 6} para cinco dados independientes ($|\Omega| = 7,776$).
+### Espacio de Observaciones Visibles ($V$)
+Cuantizacion de senales de acelerometria y termografia IoT:
+$$V = \{V_0: \text{Vibracion Baja / Normal}, V_1: \text{Vibracion Media / Alerta}, V_2: \text{Vibracion Alta / Picos Termicos}\}$$
 
-2. **MODIFICA (Adaptaciones y mejoras):**
-   - Adaptacion del motor de juego para 2 jugadores competitivos en turnos alternados (13 rondas por jugador).
-   - Incorporacion del sistema de seleccion y retencion de dados entre lanzamientos.
-   - Formalizacion del comportamiento entre lanzamientos sucesivos como una Cadena de Markov de Tiempo Discreto (DTMC) con estados $E_1$ a $E_5$.
-
-3. **CREA (Nuevos desarrollos e innovacion):**
-   - Implementacion de un simulador Monte Carlo masivo capaz de ejecutar 10,000 partidas completas con heuristica de decision.
-   - Desarrollo de una interfaz web interactiva con tablero de juego, animaciones y simulador en vivo.
-   - Generacion de un libro en Excel con formulas nativas dinamicas (ALEATORIO.ENTRE, CONTAR.SI, MMULT).
-   - Comprobacion experimental de la Teoria de los Grandes Numeros.
+### Matrices Estocasticas y Probabilidades
+* **Matriz de Transicion de Estados ($A$):** $a_{ij} = P(q_t = S_j \mid q_{t-1} = S_i)$
+* **Matriz de Emision de Sensores ($B$):** $b_j(k) = P(o_t = V_k \mid q_t = S_j)$
+* **Distribucion Inicial ($\pi$):** $\pi = [0.85, 0.12, 0.03]^T$
 
 ---
 
-## Fundamento Matematico
+## 3. Escenarios Operacionales Evaluados
 
-### 1. Distribucion Uniforme Discreta U{1, 6}
-Cada dado se modela como una variable aleatoria discreta $X_i \sim U\{1, 6\}$:
-$$P(X_i = k) = \frac{1}{6}, \quad \forall k \in \{1, 2, 3, 4, 5, 6\}$$
-
-Asumiendo independencia entre los cinco dados:
-$$|\Omega| = 6^5 = 7,776 \text{ combinaciones equiprobables}$$
-$$P(X_1 = k_1, \dots, X_5 = k_5) = \left(\frac{1}{6}\right)^5 = \frac{1}{7,776} \approx 1.286 \times 10^{-4}$$
-
-### 2. Justificacion del Modelo de Markov (DTMC)
-Un turno consta de tres etapas discretas $t \in \{0, 1, 2\}$. Si el jugador persigue la categoria Yahtzee, el estado $X_t \in \{E_1, E_2, E_3, E_4, E_5\}$ se define como el numero maximo de dados coincidentes conservados:
-- $E_1$: 1 dado retenido (se relanzan 4).
-- $E_2$: Pareja retenida (se relanzan 3).
-- $E_3$: Trio retenido (se relanzan 2).
-- $E_4$: Poker retenido (se relanza 1).
-- $E_5$: Yahtzee (Estado absorbente, $p_{5,5} = 1$).
-
-#### Propiedad de Markov:
-El estado en la siguiente etapa depende unicamente de la cantidad de dados retenidos en el estado actual:
-$$P(X_{t+1} = j \mid X_t = i, \dots, X_0 = i_0) = P(X_{t+1} = j \mid X_t = i) = p_{ij}$$
-
-```mermaid
-graph LR
-    E1((E1)) -->|0.463| E2((E2))
-    E1 -->|0.231| E3((E3))
-    E1 -->|0.077| E4((E4))
-    E1 -->|0.006| E5(((E5)))
-    E2 -->|0.579| E2
-    E2 -->|0.347| E3
-    E2 -->|0.069| E4
-    E2 -->|0.005| E5
-    E3 -->|0.694| E3
-    E3 -->|0.278| E4
-    E3 -->|0.028| E5
-    E4 -->|0.833| E4
-    E4 -->|0.167| E5
-    E5 -->|1.000| E5
-```
-
-### 3. Matriz de Transicion P
-$$\mathbf{P} = \begin{pmatrix}
-0.2222 & 0.4630 & 0.2315 & 0.0772 & 0.0062 \\
-0.0000 & 0.5787 & 0.3472 & 0.0694 & 0.0046 \\
-0.0000 & 0.0000 & 0.6944 & 0.2778 & 0.0278 \\
-0.0000 & 0.0000 & 0.0000 & 0.8333 & 0.1667 \\
-0.0000 & 0.0000 & 0.0000 & 0.0000 & 1.0000
-\end{pmatrix}$$
-
-#### Probabilidad acumulada de Yahtzee:
-- Tiro 1: $\pi^{(0)}_5 = \frac{6}{7776} \approx 0.077\%$
-- Tiro 2: $\pi^{(1)}_5 = (\pi^{(0)} \mathbf{P})_5 \approx 1.312\%$
-- Tiro 3: $\pi^{(2)}_5 = (\pi^{(0)} \mathbf{P}^2)_5 \approx 4.726\%$
+Se formularon tres escenarios contrastados:
+1. **Escenario 1 (Operacion Nominal / Mantenimiento Preventivo):** Alta persistencia en estado sano ($a_{00} = 0.92$) y sensores calibrados ($b_{00} = 0.80$).
+2. **Escenario 2 (Operacion Severa / Sobrecarga Mecanica):** Transicion acelerada hacia falla ($a_{01} = 0.24, a_{12} = 0.32$).
+3. **Escenario 3 (Incertidumbre / Sensores Ruidosos):** Matriz $B$ con alta dispersion entropica ($b_{00} = 0.48, b_{11} = 0.50$).
 
 ---
 
-## Resultados y Teoria de los Grandes Numeros
+## 4. Resultados Cuantitativos (Simulacion Monte Carlo, N=200 Replicas)
 
-Resultados tras 10,000 partidas completas entre 2 jugadores (130,000 turnos evaluados):
-
-| Metrica | Jugador 1 | Jugador 2 | Teoria / Referencia |
-| :--- | :---: | :---: | :---: |
-| Partidas Evaluadas | 10,000 | 10,000 | N representativo |
-| Puntaje Medio | 168.21 | 168.68 | Esperanza matematica simetrica |
-| Desviacion Estandar | 58.88 | 59.09 | Dispersion de la muestra |
-| Tasa de Victorias | 49.92% | 49.49% | Teoria de paridad: 50% |
-| Tasa de Yahtzee por partida | 31.95% | 31.95% | Frecuencia de exito |
-| Probabilidad Yahtzee Tiro 1 | 0.077% | 0.077% | Valor teorico: 0.07716% (6/7,776) |
-
-### Justificacion del Cumplimiento de la Teoria de los Grandes Numeros:
-1. **Convergencia puntual:** Al ejecutar 10,000 partidas, la probabilidad observada de sacar Yahtzee en el primer lanzamiento fue de exactamente 0.077%, convergiendo con precision al valor teorico analitico de 6/7,776 = 0.07716%.
-2. **Estabilidad de promedios:** El puntaje medio de ambos jugadores mostro una variacion menor al 0.3%, indicando que la media muestral $\bar{X}_N$ se estabilizo alrededor de la esperanza matematica $E[X]$.
-3. **Simetria competitiva:** Ambos jugadores mostraron una proporcion de victorias cercana al 50% (49.92% vs 49.49%), demostrando que a gran escala las fluctuaciones del azar se cancelan mutuamente, satisfaciendo la Ley Fuerte de los Grandes Numeros.
+| Escenario Operacional | Exactitud Viterbi Media | IC 95% Exactitud | Tiempo Medio a Falla (TTFF) | IC 95% TTFF |
+| :--- | :---: | :---: | :---: | :---: |
+| **Escenario 1: Nominal** | **89.43% ± 4.46%** | [88.82%, 90.05%] | 22.68 ± 22.05 pasos | [19.62, 25.73] |
+| **Escenario 2: Sobrecarga** | **91.28% ± 3.64%** | [90.78%, 91.79%] | 5.45 ± 4.19 pasos | [4.86, 6.03] |
+| **Escenario 3: Ruidoso** | **58.79% ± 11.76%** | [57.16%, 60.42% marine] | 13.99 ± 12.13 pasos | [12.31, 15.67] |
 
 ---
 
-## Estructura del Proyecto
+## 5. Estructura del Repositorio
 
 ```text
 Simulación/
 ├── src/
-│   ├── yahtzee_core.py                   # Reglas del juego y evaluacion
-│   ├── markov_montecarlo.py              # Calculo de Markov y simulacion Monte Carlo
-│   ├── cli_game.py                       # Juego por terminal
-│   └── excel_generator.py                # Generador de Excel con formulas
-├── web/
-│   ├── index.html                        # Interfaz grafica
-│   ├── style.css                         # Estilos
-│   └── app.js                            # Logica de juego y simulador
-├── results/                              # Graficos generados
-├── ValenciaGoez_WilfranCamilo_Montecarlo.docx # Informe tecnico
-├── ValenciaGoez_WilfranCamilo_Montecarlo.doc  # Copia de compatibilidad
-├── ValenciaGoez_WilfranCamilo_Montecarlo_Simulacion.xlsx # Libro Excel
-├── generate_document.py                  # Generador del documento
-├── web_server.py                         # Servidor local
-├── run_all.py                            # Script de ejecucion general
-└── requirements.txt                      # Dependencias
+│   ├── hmm_model.py                     # Clase formal HMM (Forward, Viterbi, exactitud)
+│   └── simulate_experiments.py          # Simulador Monte Carlo de los 3 escenarios
+├── results/                             # Graficas generadas en 300 DPI
+│   ├── figura1_matrices_hmm.png         # Heatmaps de matrices A y B
+│   ├── figura2_viterbi_trayectorias.png # Decodificacion vs estado real
+│   └── figura3_metricas_boxplot.png     # Boxplots de exactitud y TTFF
+├── ValenciaGoez_WilfranCamilo_HMM_Q1.docx # Paper formal en formato articulo Q1
+├── resultados_hmm_escenarios.xlsx       # Tablas de datos crudos y estadisticos
+├── generate_paper_q1.py                 # Script generador del documento Word
+└── requirements.txt                     # Dependencias (numpy, pandas, matplotlib, openpyxl, python-docx)
 ```
 
 ---
 
-## Instalacion y Ejecucion
+## 6. Instrucciones de Reproduccion
 
-### Dependencias:
+### Requisitos
+* Python 3.10+
+* Instalar dependencias:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Ejecutar simulacion y generacion completa:
+### Ejecutar Experimentos y Generar Graficas
 ```bash
-python run_all.py
+python src/simulate_experiments.py
 ```
+Este comando ejecuta 200 replicaciones Monte Carlo con horizonte $T=150$ bajo semillas fijas (`seed=42`), genera el archivo Excel `resultados_hmm_escenarios.xlsx` y guarda las 3 figuras de alta resolucion en la carpeta `results/`.
 
-### Iniciar servidor web:
+### Generar Documento Q1
 ```bash
-python web_server.py
+python generate_paper_q1.py
 ```
-Acceder en el navegador a `http://localhost:8000`.
-
-### Ejecutar juego en terminal:
-```bash
-python src/cli_game.py
-```
+Genera el documento Word `ValenciaGoez_WilfranCamilo_HMM_Q1.docx` con estructura de paper cientifico, tablas formateadas y figuras embebidas.
