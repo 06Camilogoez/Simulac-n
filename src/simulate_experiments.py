@@ -18,31 +18,32 @@ RESULTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "re
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 # -------------------------------------------------------------------------
-# DEFINICION DEL CASO INDUSTRIAL:
-# Monitoreo y Diagnostico de Estado de Salud en Rodamientos Industriales
+# DEFINICION DEL CASO EN INGENIERIA DE SOFTWARE Y DATOS:
+# Monitoreo de Fiabilidad y Deteccion de Degradacion Latente en Microservicios
+# y Pipelines de Procesamiento Masivo de Datos
 # Estados Ocultos:
-#   S_0: Operacion Normal / Sano
-#   S_1: Degradacion Incipiente / Falla Leve
-#   S_2: Falla Severa / Critica
-# Observaciones Visibles (Cuantizacion de senales de vibracion y temperatura):
-#   V_0: Vibracion Baja (Nivel normal)
-#   V_1: Vibracion Media (Alertas de desbalance)
-#   V_2: Vibracion Alta / Picos de aceleracion y temperatura
+#   S_0: Operacion Saludable (Healthy - Recursos estables en nodo/pod)
+#   S_1: Degradacion Latente (Degraded - Fuga de memoria/contencion de hilos)
+#   S_2: Fallo Critico / Ruptura de SLA (Service Failure / Crash / Timeout)
+# Observaciones Visibles (Telemetria APM / OpenTelemetry / Prometheus):
+#   V_0: Telemetria Nominal (Latencia baja P99 < 100ms, codigos HTTP 200)
+#   V_1: Alerta de Telemetria (Latencia media 100-500ms, retries, jitter)
+#   V_2: Telemetria Critica (Latencia alta P99 > 1s, errores HTTP 500/503/504)
 # -------------------------------------------------------------------------
 
-STATES = ["Sano (S0)", "Degradacion (S1)", "Falla Severa (S2)"]
-OBSERVATIONS = ["Vibracion Baja (V0)", "Vibracion Media (V1)", "Vibracion Alta (V2)"]
+STATES = ["Saludable (S0)", "Degradado (S1)", "Fallo SLA (S2)"]
+OBSERVATIONS = ["Nominal (V0)", "Alerta (V1)", "Critica (V2)"]
 
 def get_scenarios():
     """
-    Define 3 escenarios operacionales contrastados para evaluar la dinamica del sistema:
-      - Escenario 1: Operacion Nominal con Mantenimiento Preventivo (Alta permanencia en S0)
-      - Escenario 2: Operacion Severa con Sobrecarga Mecanica (Rapida transicion a falla S1 y S2)
-      - Escenario 3: Sensores Ruidosos / Incertidumbre de Medicion (Emision con alta entropia)
+    Define 3 escenarios operacionales en infraestructura de software y datos:
+      - Escenario 1: Carga Nominal de Trafico (Carga controlada y telemetria APM nitida)
+      - Escenario 2: Sobrecarga y Estres (Saturacion de recursos, fuga de memoria y latencia)
+      - Escenario 3: Telemetria con Ruido (Inestabilidad de red y dispersion en metricas APM)
     """
     pi_default = np.array([0.85, 0.12, 0.03])
     
-    # Escenario 1: Operacion Nominal
+    # Escenario 1: Carga Nominal de Trafico
     A_1 = np.array([
         [0.92, 0.07, 0.01],
         [0.05, 0.85, 0.10],
@@ -54,7 +55,7 @@ def get_scenarios():
         [0.02, 0.18, 0.80]
     ])
     
-    # Escenario 2: Operacion Severa (Sobrecarga)
+    # Escenario 2: Sobrecarga y Estres de Recursos
     A_2 = np.array([
         [0.70, 0.24, 0.06],
         [0.03, 0.65, 0.32],
@@ -66,7 +67,7 @@ def get_scenarios():
         [0.02, 0.13, 0.85]
     ])
     
-    # Escenario 3: Incertidumbre / Sensores con Ruido (Alta confusion en B)
+    # Escenario 3: Telemetria Ruidosa / Perdida de Paquetes
     A_3 = np.array([
         [0.88, 0.10, 0.02],
         [0.04, 0.82, 0.14],
@@ -79,9 +80,9 @@ def get_scenarios():
     ])
     
     scenarios = {
-        "Escenario 1: Operacion Nominal": HiddenMarkovModel(STATES, OBSERVATIONS, A_1, B_1, pi_default),
-        "Escenario 2: Operacion Severa":  HiddenMarkovModel(STATES, OBSERVATIONS, A_2, B_2, pi_default),
-        "Escenario 3: Sensores con Ruido": HiddenMarkovModel(STATES, OBSERVATIONS, A_3, B_3, pi_default),
+        "Escenario 1: Carga Nominal": HiddenMarkovModel(STATES, OBSERVATIONS, A_1, B_1, pi_default),
+        "Escenario 2: Sobrecarga y Estres": HiddenMarkovModel(STATES, OBSERVATIONS, A_2, B_2, pi_default),
+        "Escenario 3: Telemetria Ruidosa": HiddenMarkovModel(STATES, OBSERVATIONS, A_3, B_3, pi_default),
     }
     return scenarios
 
@@ -262,7 +263,7 @@ def generate_scientific_plots(scenarios, sample_trajectory, df_raw):
         ax.step(t_range, true_s, label='Estado Oculto Real', color='#1f77b4', linewidth=1.8, where='mid')
         ax.plot(t_range, dec_s, 'o--', label='Decodificacion Viterbi', color='#d62728', markersize=3.5, alpha=0.8)
         ax.set_yticks([0, 1, 2])
-        ax.set_yticklabels(['S0 (Sano)', 'S1 (Alerta)', 'S2 (Falla)'])
+        ax.set_yticklabels(['S0 (Saludable)', 'S1 (Degradado)', 'S2 (Fallo SLA)'])
         ax.set_title(f"{sc_key} (Trayectoria T=1 a 80)")
         ax.grid(True, linestyle=':', alpha=0.6)
         if idx == 0:
