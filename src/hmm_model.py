@@ -125,3 +125,4 @@ class HiddenMarkovModel:
     def compute_accuracy(self, true_states: np.ndarray, decoded_states: np.ndarray) -> float:
         """Calcula la exactitud (accuracy) de la decodificacion de Viterbi frente al estado real."""
         return float(np.mean(true_states == decoded_states))
+

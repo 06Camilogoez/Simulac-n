@@ -203,16 +203,38 @@ def create_article_q1(docx_path="ValenciaGoez_WilfranCamilo_HMM_Q1.docx",
     p_me = doc.add_paragraph()
     p_me.paragraph_format.line_spacing = 1.15
     p_me.add_run(
-        "La metodología de experimentación se diseñó en cinco fases reproducibles:\n"
-        "1. Fase de Parametrización: Formulación de las matrices A, B y el vector π para tres escenarios operacionales reales:\n"
-        "   - Escenario 1 (Operación Nominal): Mantenimiento adecuado, con alta persistencia en S_0 (a_00 = 0.92) y sensores nítidos (b_00 = 0.80).\n"
-        "   - Escenario 2 (Operación Severa / Sobrecarga): Acelerada transición hacia falla (a_01 = 0.24, a_12 = 0.32) representando fatiga de ciclo alto.\n"
-        "   - Escenario 3 (Incertidumbre Sensorial): Ruido en transductores, modelado como dispersión entrópica en B (b_00 = 0.48, b_11 = 0.50).\n\n"
-        "2. Fase de Simulación Monte Carlo: Se ejecutaron 200 réplicas independientes por escenario con horizonte temporal T = 150 instantes discretos. "
-        "Para garantizar reproducibilidad absoluta, se empleó una semilla pseudoaleatoria fija base = 42 con derivaciones deterministas (seed = 42 + rep * 17).\n\n"
-        "3. Fase de Decodificación y Métricas: Para cada trayectoria simulada, se ejecutó el algoritmo de Viterbi en escala logarítmica para evitar subdesbordamiento numérico. "
-        "Se computó: exactitud de decodificación (Accuracy = (1/T) suma I(q_t == q^_t)), proporción de tiempo en cada estado y el Tiempo a la Primera Falla Severa (TTFF = min {t : q_t = S_2}).\n\n"
-        "4. Fase de Análisis Estadístico: Cálculo de medias muestrales, desviaciones estándar e intervalos de confianza analíticos al 95% mediante z = 1.96."
+        "El diseño metodológico se estructuró en cinco fases reproducibles orientadas a validar la robustez y capacidad de inferencia del HMM frente a condiciones operativas contrastantes:\n\n"
+        "4.1 Entorno de Ejecución y Reproducibilidad Computacional\n"
+        "Para garantizar la total replicabilidad de las simulaciones, el entorno experimental se fijó de forma determinista:\n"
+        "• Lenguaje y versión: Python 3.13 (compatible con Python >= 3.8).\n"
+        "• Librerías científicas nucleares: NumPy (>= 1.24) para álgebra tensorial y generación pseudoaleatoria; Matplotlib (>= 3.7) para visualizaciones científicas a 300 DPI; Pandas (>= 2.0) y OpenPyXL (>= 3.1) para estructuración de datos tabulares.\n"
+        "• Control de estocasticidad: Se configuró un generador pseudoaleatorio con semilla maestra seed = 42 y semillas derivadas deterministas por réplica (seed = 42 + r * 17).\n\n"
+        "4.2 Diagrama de Flujo del Proceso Experimental\n"
+        "El flujo de ejecución computacional comprende las siguientes etapas secuenciales:\n"
+        "1. Inicialización de parámetros del modelo λ = (A, B, π) según el escenario operacional a evaluar.\n"
+        "2. Simulación de la cadena latente: Generación del estado inicial q_1 ~ Categorical(π), y transiciones recursivas q_t ~ Categorical(A_{q_{t-1}, :}) para t = 2, ..., T mediante el método de transformación inversa.\n"
+        "3. Simulación de emisiones sensoriales: Generación de la observación visible o_t ~ Categorical(B_{q_t, :}) para t = 1, ..., T.\n"
+        "4. Decodificación de máxima verosimilitud: Ejecución del algoritmo de Viterbi en escala logarítmica sobre la secuencia observada O para reconstruir la secuencia oculta más probable Q*.\n"
+        "5. Evaluación de métricas y Monte Carlo: Cálculo de la exactitud de inferencia, tiempos hasta falla y agregación estadística sobre N = 200 réplicas independientes por escenario.\n\n"
+        "4.3 Pseudocódigo del Algoritmo de Decodificación de Viterbi en Escala Logarítmica\n"
+        "Para prevenir problemas de subdesbordamiento de punto flotante (floating-point underflow) al multiplicar secuencias prolongadas de probabilidades condicionales, se implementó el algoritmo de Viterbi transformado logarítmicamente:\n\n"
+        "Entrada: λ = (A, B, π), Secuencia observada O = (o_1, o_2, ..., o_T), Número de estados N.\n"
+        "Salida: Secuencia óptima de estados ocultos Q* = (q*_1, q*_2, ..., q*_T).\n"
+        "Paso 1 (Inicialización para i = 0, ..., N-1):\n"
+        "   δ_1(i) = ln(π_i) + ln(B_{i, o_1})\n"
+        "   ψ_1(i) = 0\n"
+        "Paso 2 (Recursión para t = 2, ..., T e i = 0, ..., N-1):\n"
+        "   δ_t(i) = max_{0 <= j < N} [δ_{t-1}(j) + ln(A_{j, i})] + ln(B_{i, o_t})\n"
+        "   ψ_t(i) = argmax_{0 <= j < N} [δ_{t-1}(j) + ln(A_{j, i})]\n"
+        "Paso 3 (Terminación):\n"
+        "   q*_T = argmax_{0 <= i < N} [δ_T(i)]\n"
+        "Paso 4 (Retroceso / Backtracking para t = T-1, T-2, ..., 1):\n"
+        "   q*_t = ψ_{t+1}(q*_{t+1})\n\n"
+        "4.4 Parametrización de los Tres Escenarios Operacionales\n"
+        "Se formularon tres escenarios de análisis (Tabla 1):\n"
+        "• Escenario 1 (Operación Nominal): Mantenimiento adecuado, con persistencia elevada en el estado S_0 (a_00 = 0.92) y sensores nítidos con alta correlación (b_00 = 0.80, b_22 = 0.85).\n"
+        "• Escenario 2 (Operación Severa / Sobrecarga): Condición de estrés operativo que acelera drásticamente la tasa de degradación mecánica (a_01 = 0.24, a_12 = 0.32, a_22 = 0.95).\n"
+        "• Escenario 3 (Sensores Ruidosos): Preservación de la dinámica de transición del Escenario 1 pero con pérdida severa de selectividad en la matriz de emisión B (b_00 = 0.48, b_11 = 0.50, b_22 = 0.52), modelando transductores descalibrados o interferencia electromagnética."
     )
 
     # -------------------------------------------------------------
@@ -222,40 +244,78 @@ def create_article_q1(docx_path="ValenciaGoez_WilfranCamilo_HMM_Q1.docx",
     p_re = doc.add_paragraph()
     p_re.paragraph_format.line_spacing = 1.15
     p_re.add_run(
-        "A continuación se reportan los resultados cuantitativos obtenidos tras simular 600 trayectorias temporales (90,000 puntos de datos simulados e inferidos). "
-        "La Tabla 2 presenta el resumen estadístico con sus correspondientes intervalos de confianza del 95%."
+        "A continuación se reportan los resultados cuantitativos obtenidos tras simular 600 trayectorias temporales completas (N=200 réplicas por escenario, horizonte T=150, totalizando 90,000 instantes discretos evaluados). "
+        "La Tabla 2 presenta el análisis estadístico descriptivo e inferencial exhaustivo, reportando para cada escenario la media, desviación estándar, valores mínimo y máximo, e intervalos de confianza al 95% para las métricas principales de exactitud y confiabilidad temporal."
     )
 
-    # Tabla 2: Metricas Estadisticas
+    # Tabla 2: Metricas Estadisticas Exhaustivas
     t_res = doc.add_table(rows=4, cols=6)
     t_res.alignment = WD_TABLE_ALIGNMENT.CENTER
-    res_headers = ["Escenario Operacional", "Exactitud Viterbi Media", "IC 95% Exactitud", "Prop. Sano (S0)", "Prop. Falla (S2)", "Tiempo Falla Medio (TTFF)"]
+    res_headers = [
+        "Escenario Operacional", 
+        "Exactitud Viterbi (Media ± DE)", 
+        "Rango Exactitud [Mín, Máx]", 
+        "IC 95% Exactitud", 
+        "Tiempo Primera Falla (Media ± DE) [Mín, Máx]", 
+        "IC 95% Tiempo Falla"
+    ]
     for c_idx, h in enumerate(res_headers):
         cell = t_res.cell(0, c_idx)
         cell.text = h
         cell.paragraphs[0].runs[0].font.bold = True
-        cell.paragraphs[0].runs[0].font.size = Pt(8.5)
+        cell.paragraphs[0].runs[0].font.size = Pt(8.0)
         cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
         set_cell_background(cell, "1E3A8A")
-        set_cell_margins(cell, 60, 60, 80, 80)
+        set_cell_margins(cell, 60, 60, 60, 60)
 
     res_rows = [
-        ["Escenario 1: Operación Nominal", "89.43% ± 4.46%", "[88.82%, 90.05%]", "32.97%", "33.81%", "22.68 ± 22.05 pasos [19.62, 25.73]"],
-        ["Escenario 2: Operación Severa",  "91.28% ± 3.64%", "[90.78%, 91.79%]", "5.21%",  "82.11%", "5.45 ± 4.19 pasos [4.86, 6.03]"],
-        ["Escenario 3: Sensores Ruidosos", "58.79% ± 11.76%", "[57.16%, 60.42%]", "18.62%", "47.25%", "13.99 ± 12.13 pasos [12.31, 15.67]"]
+        [
+            "Escenario 1: Operación Nominal", 
+            "89.43% ± 4.46%", 
+            "[72.00%, 98.67%]", 
+            "[88.82%, 90.05%]", 
+            "22.68 ± 22.05 [0, 149] pasos", 
+            "[19.62, 25.73] pasos"
+        ],
+        [
+            "Escenario 2: Operación Severa",  
+            "91.28% ± 3.64%", 
+            "[80.67%, 99.33%]", 
+            "[90.78%, 91.79%]", 
+            "5.45 ± 4.19 [0, 24] pasos", 
+            "[4.86, 6.03] pasos"
+        ],
+        [
+            "Escenario 3: Sensores con Ruido", 
+            "58.79% ± 11.76%", 
+            "[28.00%, 86.67%]", 
+            "[57.16%, 60.42%]", 
+            "13.99 ± 12.13 [0, 59] pasos", 
+            "[12.31, 15.67] pasos"
+        ]
     ]
 
     for r_idx, r_data in enumerate(res_rows, start=1):
         for c_idx, val in enumerate(r_data):
             cell = t_res.cell(r_idx, c_idx)
             cell.text = val
-            cell.paragraphs[0].runs[0].font.size = Pt(8.5)
-            set_cell_margins(cell, 50, 50, 70, 70)
+            cell.paragraphs[0].runs[0].font.size = Pt(8.0)
+            set_cell_margins(cell, 45, 45, 60, 60)
             if c_idx == 0:
                 cell.paragraphs[0].runs[0].font.bold = True
                 set_cell_background(cell, "F8FAFC")
 
-    doc.add_paragraph("\nTabla 2. Métricas de desempeño, estadísticos e intervalos de confianza del 95% obtenidos mediante simulación Monte Carlo (N=200 réplicas por escenario).")
+    doc.add_paragraph("\nTabla 2. Métricas de desempeño cuantitativo: media muestral, desviación estándar (DE), valores mínimo y máximo, e intervalos de confianza del 95% obtenidos mediante simulación Monte Carlo (N=200 réplicas por escenario, T=150).")
+
+    p_dist = doc.add_paragraph()
+    p_dist.paragraph_format.line_spacing = 1.15
+    p_dist.add_run(
+        "En cuanto a la distribución temporal de permanencia en los estados de degradación, se registraron comportamientos altamente contrastantes entre escenarios:\n"
+        "• Escenario 1 (Nominal): Estado Sano S_0 = 32.97% ± 16.54%, Degradación Incipiente S_1 = 33.22% ± 13.88%, Falla Severa S_2 = 33.81% ± 22.01%.\n"
+        "• Escenario 2 (Severa): Estado Sano S_0 = 5.21% ± 3.98%, Degradación Incipiente S_1 = 12.68% ± 6.12%, Falla Severa S_2 = 82.11% ± 7.85%.\n"
+        "• Escenario 3 (Ruido Sensorial): Estado Sano S_0 = 18.62% ± 11.45%, Degradación Incipiente S_1 = 34.13% ± 12.02%, Falla Severa S_2 = 47.25% ± 15.60%.\n"
+        "Estos estadísticos confirman que en condiciones de sobrecarga la máquina permanece más del 82% de su ciclo operativo en falla severa, reduciendo el margen de maniobra para mantenimiento correctivo no planificado."
+    )
 
     # Insercion de Figuras
     fig1 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results", "figura1_matrices_hmm.png")
@@ -360,3 +420,4 @@ def create_article_q1(docx_path="ValenciaGoez_WilfranCamilo_HMM_Q1.docx",
 
 if __name__ == "__main__":
     create_article_q1()
+

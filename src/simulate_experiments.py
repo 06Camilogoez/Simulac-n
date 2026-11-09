@@ -326,3 +326,4 @@ if __name__ == "__main__":
         
     print("\nResumen de Metricas Estadisticas:")
     print(df_metrics.to_string())
+
