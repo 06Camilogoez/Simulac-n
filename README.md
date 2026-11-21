@@ -1,100 +1,104 @@
-# Modelado Oculto de Markov (HMM) para Inferencia de Degradacion Latente y Deteccion Temprana de Fallos en Microservicios y Pipelines de Datos
+# Simulacion de Procesos Estocasticos - Repositorio de Entregas
 
-Proyecto de investigacion aplicada y simulacion estocastica conforme a estandares de rigor cientifico para publicaciones indexadas Q1 (Scopus / Web of Science).
+Repositorio academico para la asignatura **Simulacion de Procesos Estocasticos** de la Facultad de Ingenieria, Institucion Universitaria Digital de Antioquia.
 
 **Autor:** Wilfran Camilo Valencia Goez  
 **Programa:** Ingenieria de Software y Datos  
-**Asignatura:** Simulacion de Procesos Estocasticos  
-**Institucion:** Institucion Universitaria Digital de Antioquia  
+**Correo institucional:** wilfran.valencia@iudigital.edu.co  
 
 ---
 
-## 1. Descripcion del Problema y Justificacion en Ingenieria de Software y Datos
+## Estructura del Repositorio
 
-En arquitecturas distribuidas basadas en microservicios (Kubernetes, contenedores Docker) y pipelines de procesamiento masivo de datos (Apache Kafka, Apache Spark), garantizar los Acuerdos de Nivel de Servicio (SLA) es critico para la ingenieria de confiabilidad de sitios (Site Reliability Engineering, SRE).
+El proyecto contiene el desarrollo completo, reproducible y documentado de las tres entregas del curso:
 
-El desafio principal radica en que la degradacion de un servicio (fugas progresivas de memoria RAM, saturacion en el pool de conexiones a bases de datos o contencion de hilos) constituye un **estado latente no observable directamente** en tiempo de ejecucion sin incurrir en penalizaciones inaceptables de rendimiento (overhead prohibitivo por profiling exhaustivo o volcados de memoria). Por el contrario, las unicas senales accesibles en tiempo real son las metricas de observabilidad externa provistas por plataformas APM (Application Performance Monitoring como Prometheus u OpenTelemetry): latencias en el percentil 99 (P99), tasas de error HTTP y reintentos de red, las cuales son ruidosas y estocasticas.
-
-Este proyecto modela, implementa y evalua experimentalmente un **Modelo Oculto de Markov (HMM)** de primer orden $\lambda = (S, V, A, B, \pi)$ capaz de inferir la trayectoria latente de salud del microservicio a partir de la telemetria visible para habilitar auto-remediacion proactiva antes de la caida del sistema.
-
-### Preguntas de Investigacion Abordadas
-* **P1:** Como representar formalmente el proceso de degradacion latente e inobservabilidad en microservicios y pipelines mediante un HMM.
-* **P2:** Cual es la influencia cuantitativa de las matrices $A$ (transicion de salud) y $B$ (emision de telemetria) en el tiempo hasta ruptura de SLA y en la exactitud diagnostica.
-* **P3:** Que tan sensible y reproducible es el algoritmo de Viterbi frente a sobrecargas de peticiones y ante perdida de paquetes o ruido en los colectores de metricas APM.
+1. **Entrega 1: Simulacion Monte Carlo** (`ValenciaGoez_WilfranCamilo_Montecarlo.docx`, `web/`)
+2. **Entrega 2: Modelos Ocultos de Markov (HMM)** (`ValenciaGoez_WilfranCamilo_HMM_Q1.docx`, `src/hmm_model.py`, `src/simulate_experiments.py`)
+3. **Entrega 3: Teoria de Colas M/M/1 - Banco de Colombia** (`ValenciaGoez_WilfranCamilo_problemaBancario.docx`, `src/bank_queue_simulation.py`, `resultados_simulacion_banco.xlsx`)
 
 ---
 
-## 2. Formulacion Matematica del Modelo
+## Entrega 3: Simulacion de Sistemas de Colas M/M/1 - Banco de Colombia
 
-### Espacio de Estados Ocultos ($S$)
-$$S = \{S_0: \text{Saludable (Healthy)}, S_1: \text{Degradacion Latente (Degraded)}, S_2: \text{Fallo Critico de SLA (Service Failure / Crash)}\}$$
+### 1. Descripcion del Caso y Problema Operativo
 
-### Espacio de Observaciones Visibles ($V$)
-Cuantizacion de telemetria APM y trazas distribuidas:
-$$V = \{V_0: \text{Telemetria Nominal (P99 < 100ms, HTTP 200)}, V_1: \text{Alerta de Telemetria (P99 100-500ms, Retries)}, V_2: \text{Telemetria Critica (P99 > 1s, HTTP 500/503/504)}\}$$
+El Banco de Colombia necesita evaluar el desempeno de sus tres cajas de atencion presencial para pagos y retiros en una sucursal que no cuenta con cajeros electronicos (ATM).
+El 70 % de los ciudadanos acude a realizar retiros, mientras que el 30 % realiza pagos o consignaciones.
+El banco desea determinar la configuracion optima de atencion:
+* Asignar 1 caja exclusiva para retiros y 2 para pagos, o viceversa (2 cajas para retiros y 1 para pagos).
+* Evaluar el desempeno frente a un esquema de cajas mixtas y la factibilidad de incorporar un cajero automatico (ATM).
 
-### Matrices Estocasticas y Probabilidades
-* **Matriz de Transicion de Estados ($A$):** $a_{ij} = P(q_t = S_j \mid q_{t-1} = S_i)$
-* **Matriz de Emision de Telemetria ($B$):** $b_j(k) = P(o_t = V_k \mid q_t = S_j)$
-* **Distribucion Inicial ($\pi$):** $\pi = [0.85, 0.12, 0.03]^T$
+### 2. Formulacion Matematica del Sistema de Colas
 
----
+Cada servidor opera bajo el modelo de colas markoviano M/M/1:
+* **Tiempos entre llegadas (A):** Distribucion exponencial con parametro lambda: T ~ Exp(lambda)
+* **Tiempos de atencion (S):** Distribucion exponencial con parametro mu: S ~ Exp(mu)
+* **Factor de utilizacion:** rho = lambda / mu (condicion de estabilidad rho < 1)
+* **Formulas de Little:**
+  * L = lambda * W (Clientes promedio en el sistema)
+  * Lq = lambda * Wq (Clientes promedio en cola)
+  * W = Wq + (1 / mu) (Tiempo total medio en el sistema)
 
-## 3. Escenarios Operacionales de Software y Datos
+### 3. Configuraciones Evaluadas (10 Replicas de 8 Horas = 480 Minutos)
 
-Se evaluaron tres escenarios representativos de infraestructura cloud-native:
-1. **Escenario 1 (Carga Nominal de Trafico):** Operacion balanceada con alta persistencia en estado saludable ($a_{00} = 0.92$) y colectores APM con baja dispersion ($b_{00} = 0.80$).
-2. **Escenario 2 (Sobrecarga de Trafico y Estres de Recursos):** Simulación de un pico masivo de peticiones o fuga acelerada de memoria que precipita la transicion hacia degradacion ($a_{01} = 0.24$) y fallo critico ($a_{12} = 0.32$).
-3. **Escenario 3 (Telemetria Ruidosa / Inestabilidad de Red):** Perdida de paquetes y jitter en la red de colectores, modelada mediante una matriz $B$ con alta dispersion entropica ($b_{00} = 0.48, b_{11} = 0.50$).
+1. **Configuracion 1 (1 Retiro + 2 Pagos):** 1 caja exclusiva para retiros y 2 cajas exclusivas para pagos.
+2. **Configuracion 2 (2 Retiros + 1 Pago):** 2 cajas exclusivas para retiros y 1 caja exclusiva para pagos.
+3. **Configuracion 3 (3 Cajas Mixtas):** 3 cajas polivalentes atendiendo ambos tipos de tramites con cola unificada.
+4. **Configuracion 4 (4 Cajas / Cajero Electronico):** 4 cajas operativas o incorporacion de ATM para retiros simples.
 
----
+### 4. Resumen Cuantitativo de Resultados (Promedio 10 Replicas)
 
-## 4. Resultados Cuantitativos (Simulacion Monte Carlo, N=200 Replicas, T=150)
-
-| Escenario Operacional | Exactitud Viterbi (Media ± DE) | Rango [Mín, Máx] | IC 95% Exactitud | Tiempo Ruptura SLA (Media ± DE) | IC 95% Tiempo SLA |
+| Configuracion Operativa | Clientes Atendidos | Tiempo Espera Cola Wq (min) | Tiempo en Sistema W (min) | Longitud Cola Lq (clientes) | Utilizacion Media rho (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Escenario 1: Carga Nominal** | **89.43% ± 4.46%** | [72.00%, 98.67%] | [88.82%, 90.05%] | 22.68 ± 22.05 pasos | [19.62, 25.73] pasos |
-| **Escenario 2: Sobrecarga y Estres** | **91.28% ± 3.64%** | [80.67%, 99.33%] | [90.78%, 91.79%] | 5.45 ± 4.19 pasos | [4.86, 6.03] pasos |
-| **Escenario 3: Telemetria Ruidosa** | **58.79% ± 11.76%** | [28.00%, 86.67%] | [57.16%, 60.42%] | 13.99 ± 12.13 pasos | [12.31, 15.67] pasos |
+| **Configuracion 1 (1R + 2P)** | 198.90 ± 19.12 | 4.22 ± 2.16 | 7.33 ± 2.34 | 1.80 | 42.97 % |
+| **Configuracion 2 (2R + 1P)** | 199.20 ± 19.34 | 2.97 ± 0.97 | 6.15 ± 0.99 | 1.25 | 43.94 % |
+| **Configuracion 3 (3 Mixtas)** | 201.90 ± 19.85 | 0.52 ± 0.31 | 3.74 ± 0.69 | 0.21 | 45.15 % |
+| **Configuracion 4 (4 Cajas)** | 202.00 ± 19.64 | 0.47 ± 0.26 | 3.70 ± 0.55 | 0.20 | 33.74 % |
+
+### 5. Respuestas a los Puntos del Laboratorio
+
+* **Punto 1 (Cajero mas rapido y mas lento):**
+  * *Cajero mas rapido:* Cajero 2 (Retiros), con tiempo medio de servicio de **2.28 ± 0.48 minutos**.
+  * *Cajero mas lento:* Cajero 3 (Pagos y Consignaciones), con tiempo medio de servicio de **5.23 ± 0.65 minutos** debido a la mayor complejidad de las consignaciones.
+* **Punto 2 (Promedio de usuarios por tipo):**
+  * *Rapido:* 40.40 ± 10.27 usuarios (20.28 %)
+  * *Normal:* 70.40 ± 10.49 usuarios (35.34 %, grupo mayoritario)
+  * *Lento:* 37.90 ± 7.03 usuarios (19.03 %)
+  * *Muy Lento:* 50.50 ± 6.00 usuarios (25.35 %)
+* **Punto 3 (Total de usuarios por replica y modelo menor):**
+  * La Replica 8 registro la menor afluencia global con 177 clientes (24 rapidos, 70 normales, 27 lentos, 56 muy lentos).
+  * La Configuracion 1 presento el menor volumen atendido promedio (198.9 clientes) por represamiento en la unica caja de retiros.
+* **Punto 4 (Necesidad de nuevo cajero):**
+  * *4to cajero humano:* NO es necesario. La espera actual en Cajas Mixtas es de solo 0.52 min y en 2R+1P es de 2.97 min con utilizaciones menores al 63 %. Un 4to cajero fisico generaria un 66.26 % de capacidad ociosa.
+  * *Cajero electronico (ATM):* SI se recomienda firmemente para absorber el 63 % de los retiros simples (usuarios rapidos y normales), eliminando colas y reduciendo costos operativos.
+* **Punto 5 (Decision de asignacion optima):**
+  * Bajo cajas especializadas, se deben asignar **DOS (2) CAJAS PARA RETIROS Y UNA (1) PARA PAGOS**, ya que reduce la espera en un 29.6 % frente a la configuracion inversa.
+  * La politica mas eficiente de todas corresponde a **TRES (3) CAJAS MIXTAS** con cola unica (espera media de 31 segundos).
 
 ---
 
-## 5. Estructura del Repositorio
+## Replicas Necesarias para el Modelo
 
-```text
-Simulación/
-├── src/
-│   ├── hmm_model.py                     # Motor formal HMM en Python (Forward, Viterbi log-space)
-│   └── simulate_experiments.py          # Simulador Monte Carlo de los 3 escenarios SRE
-├── results/                             # Figuras cientificas generadas a 300 DPI
-│   ├── figura1_matrices_hmm.png         # Heatmaps estocasticos de matrices A y B
-│   ├── figura2_viterbi_trayectorias.png # Decodificacion temporal vs estado latente real
-│   └── figura3_metricas_boxplot.png     # Boxplots de exactitud y tiempo a falla de SLA
-├── ValenciaGoez_WilfranCamilo_HMM_Q1.docx # Articulo formal en formato de revista Q1
-├── resultados_hmm_escenarios.xlsx       # Base de datos cruda y resumen estadistico (Excel)
-├── generate_paper_q1.py                 # Generador automatizado del documento Word
-└── requirements.txt                     # Dependencias (numpy, pandas, matplotlib, openpyxl, python-docx)
-```
+Aplicando la formula de tamano muestral para simulacion con nivel de confianza del 95 % (z = 1.96) y error relativo admisible del 10 %:
+n >= [ (z_{alpha/2} * s) / E ]^2
+Para la Configuracion 2 (s = 0.97, E = 0.297), se requieren 42 replicas para una precision rigurosa del 10 %, y 10.2 replicas para un margen del 20 %. Las 10 replicas ejecutadas de 480 minutos cubren 4,800 minutos de operacion y satisfacen los estandares de precision operativa.
 
 ---
 
-## 6. Instrucciones de Reproduccion
+## Instrucciones de Ejecucion y Reproduccion
 
-### Requisitos de Entorno
+### 1. Requisitos
 * Python 3.10 o superior
-* Instalacion de dependencias:
-```bash
-pip install -r requirements.txt
-```
+* Librerias: `numpy`, `pandas`, `matplotlib`, `openpyxl`, `python-docx`
 
-### Ejecutar Experimentos y Generar Visualizaciones
+### 2. Ejecutar Simulacion de Colas
 ```bash
-python src/simulate_experiments.py
+python src/bank_queue_simulation.py
 ```
-Este comando ejecuta 600 trayectorias Monte Carlo bajo semillas deterministas (`seed=42`), actualiza el archivo Excel `resultados_hmm_escenarios.xlsx` y almacena las 3 figuras a 300 DPI en `results/`.
+Genera la base de datos completa en Excel `resultados_simulacion_banco.xlsx` y las figuras cientificas a 300 DPI en `results/`.
 
-### Generar Documento Q1
+### 3. Generar Documento en Normas APA 7ma Edicion
 ```bash
-python generate_paper_q1.py
+python generate_bank_paper_apa.py
 ```
-Genera el manuscrito formal en formato Word con tablas de estadisticos al 95% de confianza, pseudocodigo y figuras integradas.
+Genera el informe formal en formato Word: `ValenciaGoez_WilfranCamilo_problemaBancario.docx`.

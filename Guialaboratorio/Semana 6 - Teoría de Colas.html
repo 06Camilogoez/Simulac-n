@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semana 6 - Teoría de Colas | Simulación</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.8em;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            color: #764ba2;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .week-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .section {
+            background: white;
+            padding: 35px;
+            margin-bottom: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            border-left: 6px solid #764ba2;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #764ba2;
+            font-size: 1.6em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .objectives {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 2px solid #764ba2;
+        }
+
+        .objectives ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .objectives li {
+            padding: 12px 0;
+            padding-left: 35px;
+            position: relative;
+            font-size: 1.1em;
+        }
+
+        .objectives li:before {
+            content: "🎯";
+            position: absolute;
+            left: 0;
+            font-size: 1.3em;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-left: 5px solid #ff9800;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border-left: 5px solid #4caf50;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .definition-box {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 2px solid #667eea;
+        }
+
+        .definition-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .formula-box {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.15em;
+            overflow-x: auto;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .formula-title {
+            color: #4fc3f7;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-top: 4px solid #764ba2;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .card-icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .card-title {
+            color: #667eea;
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .card-content {
+            text-align: left;
+            font-size: 1.05em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .model-section {
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe6cc 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 3px solid #ff9800;
+        }
+
+        .model-header {
+            font-size: 2em;
+            color: #e65100;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .comparison-table {
+            margin: 25px 0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .interactive-demo {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 35px;
+            border-radius: 15px;
+            margin: 25px 0;
+            color: white;
+        }
+
+        .demo-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1em;
+        }
+
+        .btn {
+            background: white;
+            color: #667eea;
+            padding: 15px 35px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .results-display {
+            background: rgba(255,255,255,0.15);
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 25px;
+            min-height: 150px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card {
+            background: white;
+            color: #667eea;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .example-box {
+            background: #f3e5f5;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 5px solid #9c27b0;
+        }
+
+        .example-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #9c27b0;
+            margin-bottom: 15px;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 30px 0;
+        }
+
+        .timeline-item {
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            margin: 25px 0;
+            margin-left: 50px;
+            border-left: 5px solid #667eea;
+            position: relative;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .timeline-item:before {
+            content: "●";
+            position: absolute;
+            left: -35px;
+            top: 25px;
+            font-size: 2.5em;
+            color: #667eea;
+        }
+
+        .quiz-container {
+            background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+        }
+
+        .quiz-question {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .quiz-options {
+            margin-top: 15px;
+        }
+
+        .quiz-option {
+            background: #f5f5f5;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .notation-table {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline-item {
+                margin-left: 30px;
+            }
+        }
+
+        .visual-diagram {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .queue-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .queue-element {
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .arrivals {
+            background: #4caf50;
+            color: white;
+        }
+
+        .queue {
+            background: #ff9800;
+            color: white;
+        }
+
+        .server {
+            background: #2196f3;
+            color: white;
+        }
+
+        .departures {
+            background: #9c27b0;
+            color: white;
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="font-size: 4em; margin-bottom: 20px;">⏱️</div>
+            <h1>Teoría de Colas</h1>
+            <p class="subtitle">Modelos de Sistemas de Espera y Análisis de Desempeño</p>
+            <div class="week-badge">📚 Semana 6 - Material Teórico</div>
+        </header>
+
+        <!-- Introducción -->
+        <div class="section">
+            <h2>📖 Introducción a la Teoría de Colas</h2>
+
+            <div class="definition-box">
+                <div class="definition-title">
+                    <span>📚</span>
+                    <span>¿Qué es la Teoría de Colas?</span>
+                </div>
+                <p style="font-size: 1.15em; line-height: 1.8;">
+                    La <strong>Teoría de Colas</strong> es una rama de la investigación de operaciones que estudia el comportamiento de sistemas donde 
+                    los clientes o entidades llegan para recibir algún tipo de servicio. Cuando el servidor está ocupado, los clientes deben esperar 
+                    en una <span class="highlight">cola o fila</span> hasta que puedan ser atendidos.
+                </p>
+            </div>
+
+            <div class="visual-diagram">
+                <h3>🔄 Estructura Básica de un Sistema de Colas</h3>
+                <div class="queue-visual">
+                    <div class="queue-element arrivals">👥 Llegadas<br>(λ)</div>
+                    <div class="arrow">→</div>
+                    <div class="queue-element queue">⏳ Cola<br>(Espera)</div>
+                    <div class="arrow">→</div>
+                    <div class="queue-element server">🔧 Servidor<br>(μ)</div>
+                    <div class="arrow">→</div>
+                    <div class="queue-element departures">✅ Salidas</div>
+                </div>
+                <p style="margin-top: 20px; color: #666;">
+                    <strong>λ</strong> = Tasa de llegada | <strong>μ</strong> = Tasa de servicio
+                </p>
+            </div>
+
+            <h3>🎯 Aplicaciones Prácticas</h3>
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-icon">🏦</div>
+                    <div class="card-title">Bancos</div>
+                    <div class="card-content">
+                        <p>Clientes esperando ser atendidos por cajeros</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🏥</div>
+                    <div class="card-title">Hospitales</div>
+                    <div class="card-content">
+                        <p>Pacientes en salas de emergencia o consultorios</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📞</div>
+                    <div class="card-title">Call Centers</div>
+                    <div class="card-content">
+                        <p>Llamadas esperando ser atendidas por operadores</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🍔</div>
+                    <div class="card-title">Restaurantes</div>
+                    <div class="card-content">
+                        <p>Clientes en fila para ordenar comida</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🚗</div>
+                    <div class="card-title">Peajes</div>
+                    <div class="card-content">
+                        <p>Vehículos esperando para pagar</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">💻</div>
+                    <div class="card-title">Servidores Web</div>
+                    <div class="card-content">
+                        <p>Solicitudes esperando ser procesadas</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="objectives">
+                <h3>🎯 Objetivos de Aprendizaje</h3>
+                <ul>
+                    <li>Comprender los componentes fundamentales de un sistema de colas</li>
+                    <li>Dominar el modelo M/M/1 y sus variantes principales</li>
+                    <li>Aplicar las Fórmulas de Little para análisis de sistemas</li>
+                    <li>Evaluar la estabilidad de sistemas de colas</li>
+                    <li>Calcular e interpretar métricas de desempeño</li>
+                    <li>Tomar decisiones basadas en análisis cuantitativo</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Notación de Kendall -->
+        <div class="section">
+            <h2>🔤 Notación de Kendall</h2>
+
+            <div class="info-box">
+                <p style="font-size: 1.15em;">
+                    La <strong>Notación de Kendall</strong> es un sistema estándar para describir y clasificar sistemas de colas. 
+                    Se expresa como: <span class="highlight">A/B/c/K/N/D</span>
+                </p>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Símbolo</th>
+                        <th>Significado</th>
+                        <th>Valores Comunes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>A</strong></td>
+                        <td>Distribución de llegadas</td>
+                        <td>M (Markoviana/Exponencial), D (Determinística), G (General)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>B</strong></td>
+                        <td>Distribución de servicio</td>
+                        <td>M (Markoviana/Exponencial), D (Determinística), G (General)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>c</strong></td>
+                        <td>Número de servidores</td>
+                        <td>1, 2, 3, ..., ∞</td>
+                    </tr>
+                    <tr>
+                        <td><strong>K</strong></td>
+                        <td>Capacidad del sistema</td>
+                        <td>Número finito o ∞ (infinito)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>N</strong></td>
+                        <td>Tamaño de la población</td>
+                        <td>Número finito o ∞ (infinito)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>D</strong></td>
+                        <td>Disciplina de la cola</td>
+                        <td>FIFO, LIFO, SIRO, Priority</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <strong>📝 Nota:</strong> Cuando K, N y D no se especifican, se asume: K = ∞, N = ∞, D = FIFO (First In, First Out)
+            </div>
+
+            <h3>Ejemplos de Notación</h3>
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-title">M/M/1</div>
+                    <div class="card-content">
+                        <p><strong>Llegadas:</strong> Exponenciales</p>
+                        <p><strong>Servicio:</strong> Exponencial</p>
+                        <p><strong>Servidores:</strong> 1</p>
+                        <p><strong>Capacidad:</strong> Infinita</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">M/M/c</div>
+                    <div class="card-content">
+                        <p><strong>Llegadas:</strong> Exponenciales</p>
+                        <p><strong>Servicio:</strong> Exponencial</p>
+                        <p><strong>Servidores:</strong> c (múltiples)</p>
+                        <p><strong>Capacidad:</strong> Infinita</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">M/M/1/K</div>
+                    <div class="card-content">
+                        <p><strong>Llegadas:</strong> Exponenciales</p>
+                        <p><strong>Servicio:</strong> Exponencial</p>
+                        <p><strong>Servidores:</strong> 1</p>
+                        <p><strong>Capacidad:</strong> K (limitada)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modelo M/M/1 -->
+        <div class="section">
+            <h2>📊 Modelo M/M/1 y Variantes</h2>
+
+            <div class="model-section">
+                <div class="model-header">🎯 Modelo M/M/1 - El Modelo Fundamental</div>
+
+                <div class="definition-box">
+                    <div class="definition-title">
+                        <span>📐</span>
+                        <span>Características del Modelo M/M/1</span>
+                    </div>
+                    <ul style="font-size: 1.1em; line-height: 1.8;">
+                        <li><strong>Primera M:</strong> Llegadas siguen un proceso de Poisson (tiempos entre llegadas exponenciales)</li>
+                        <li><strong>Segunda M:</strong> Tiempos de servicio siguen distribución exponencial</li>
+                        <li><strong>1:</strong> Un solo servidor</li>
+                        <li><strong>Capacidad:</strong> Infinita (no hay límite de clientes en el sistema)</li>
+                        <li><strong>Población:</strong> Infinita</li>
+                        <li><strong>Disciplina:</strong> FIFO (First In, First Out)</li>
+                    </ul>
+                </div>
+
+                <h3>📋 Supuestos del Modelo</h3>
+                <div class="info-box">
+                    <ul>
+                        <li>✓ Las llegadas son independientes entre sí</li>
+                        <li>✓ Los tiempos de servicio son independientes entre sí</li>
+                        <li>✓ El sistema opera en estado estacionario</li>
+                        <li>✓ No hay abandonos ni rechazos</li>
+                        <li>✓ El servidor nunca se descompone</li>
+                    </ul>
+                </div>
+
+                <h3>🔢 Parámetros Básicos</h3>
+                <div class="notation-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Símbolo</th>
+                                <th>Descripción</th>
+                                <th>Unidades</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>λ</strong></td>
+                                <td>Tasa de llegada promedio</td>
+                                <td>clientes/unidad de tiempo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>μ</strong></td>
+                                <td>Tasa de servicio promedio</td>
+                                <td>clientes/unidad de tiempo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ρ</strong></td>
+                                <td>Factor de utilización (ρ = λ/μ)</td>
+                                <td>adimensional (0 < ρ < 1)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>1/λ</strong></td>
+                                <td>Tiempo promedio entre llegadas</td>
+                                <td>unidad de tiempo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>1/μ</strong></td>
+                                <td>Tiempo promedio de servicio</td>
+                                <td>unidad de tiempo</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>📐 Fórmulas del Modelo M/M/1</h3>
+
+                <div class="formula-box">
+<span class="formula-title">1. Factor de Utilización</span>
+ρ = λ / μ
+
+Condición de estabilidad: ρ < 1 (λ < μ)
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">2. Número Promedio de Clientes en el Sistema</span>
+L = ρ / (1 - ρ) = λ / (μ - λ)
+
+Incluye clientes en cola + cliente siendo atendido
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">3. Número Promedio de Clientes en Cola</span>
+Lq = ρ² / (1 - ρ) = λ² / (μ(μ - λ))
+
+Solo clientes esperando (no incluye el que está siendo atendido)
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">4. Tiempo Promedio en el Sistema</span>
+W = 1 / (μ - λ) = L / λ
+
+Tiempo total: espera + servicio
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">5. Tiempo Promedio en Cola</span>
+Wq = λ / (μ(μ - λ)) = ρ / (μ - λ) = Lq / λ
+
+Solo tiempo de espera (no incluye servicio)
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">6. Probabilidad de n Clientes en el Sistema</span>
+P(n) = (1 - ρ) × ρⁿ    para n = 0, 1, 2, 3, ...
+
+P(0) = 1 - ρ  (probabilidad de sistema vacío)
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">7. Probabilidad de Esperar</span>
+P(espera) = P(n ≥ 1) = ρ
+
+Probabilidad de que un cliente tenga que esperar
+                </div>
+            </div>
+
+            <h3>📊 Ejemplo Práctico: Cajero Bancario</h3>
+            <div class="example-box">
+                <div class="example-title">🏦 Problema</div>
+                <p style="font-size: 1.1em; line-height: 1.8;">
+                    Un banco tiene un cajero que atiende en promedio <strong>12 clientes por hora</strong> (μ = 12 clientes/hora). 
+                    Los clientes llegan a una tasa promedio de <strong>8 clientes por hora</strong> (λ = 8 clientes/hora). 
+                    Ambos procesos siguen distribuciones exponenciales.
+                </p>
+
+                <div class="formula-box">
+<span class="formula-title">📊 Solución</span>
+
+Datos:
+λ = 8 clientes/hora
+μ = 12 clientes/hora
+
+1. Factor de utilización:
+   ρ = λ/μ = 8/12 = 0.667 (66.7%)
+   ✓ Sistema estable (ρ < 1)
+
+2. Número promedio en el sistema:
+   L = ρ/(1-ρ) = 0.667/(1-0.667) = 2 clientes
+
+3. Número promedio en cola:
+   Lq = ρ²/(1-ρ) = (0.667)²/(1-0.667) = 1.33 clientes
+
+4. Tiempo promedio en el sistema:
+   W = 1/(μ-λ) = 1/(12-8) = 0.25 horas = 15 minutos
+
+5. Tiempo promedio en cola:
+   Wq = λ/(μ(μ-λ)) = 8/(12×4) = 0.167 horas = 10 minutos
+
+6. Probabilidad de sistema vacío:
+   P(0) = 1 - ρ = 1 - 0.667 = 0.333 (33.3%)
+
+7. Probabilidad de esperar:
+   P(espera) = ρ = 0.667 (66.7%)
+                </div>
+
+                <div class="success-box">
+                    <strong>📈 Interpretación:</strong>
+                    <ul>
+                        <li>El cajero está ocupado el 66.7% del tiempo</li>
+                        <li>En promedio hay 2 clientes en el sistema</li>
+                        <li>Los clientes esperan en promedio 10 minutos antes de ser atendidos</li>
+                        <li>El tiempo total en el banco es de 15 minutos en promedio</li>
+                        <li>Hay un 66.7% de probabilidad de tener que esperar</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>🔄 Variantes del Modelo M/M/1</h3>
+
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-icon">👥</div>
+                    <div class="card-title">M/M/c</div>
+                    <div class="card-content">
+                        <p><strong>Múltiples Servidores</strong></p>
+                        <p>c servidores idénticos en paralelo</p>
+                        <p>Cola única para todos los servidores</p>
+                        <p><strong>Ejemplo:</strong> Banco con varios cajeros</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🚫</div>
+                    <div class="card-title">M/M/1/K</div>
+                    <div class="card-content">
+                        <p><strong>Capacidad Limitada</strong></p>
+                        <p>Máximo K clientes en el sistema</p>
+                        <p>Clientes rechazados si sistema lleno</p>
+                        <p><strong>Ejemplo:</strong> Sala de espera con K asientos</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🔢</div>
+                    <div class="card-title">M/M/c/K</div>
+                    <div class="card-content">
+                        <p><strong>Múltiples Servidores + Capacidad Limitada</strong></p>
+                        <p>c servidores con capacidad máxima K</p>
+                        <p>Combina ambas restricciones</p>
+                        <p><strong>Ejemplo:</strong> Call center con líneas limitadas</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">👨‍👩‍👧‍👦</div>
+                    <div class="card-title">M/M/1//N</div>
+                    <div class="card-content">
+                        <p><strong>Población Finita</strong></p>
+                        <p>Solo N clientes potenciales</p>
+                        <p>Tasa de llegada depende de clientes fuera del sistema</p>
+                        <p><strong>Ejemplo:</strong> Máquinas en taller de reparación</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">∞</div>
+                    <div class="card-title">M/M/∞</div>
+                    <div class="card-content">
+                        <p><strong>Servidores Infinitos</strong></p>
+                        <p>Cada cliente tiene su propio servidor</p>
+                        <p>No hay espera (Wq = 0)</p>
+                        <p><strong>Ejemplo:</strong> Autoservicio, estacionamiento grande</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">M/M/c/K/N</div>
+                    <div class="card-content">
+                        <p><strong>Modelo General</strong></p>
+                        <p>Combina todas las restricciones</p>
+                        <p>c servidores, capacidad K, población N</p>
+                        <p><strong>Ejemplo:</strong> Sistemas complejos reales</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>📊 Tabla Comparativa de Variantes</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Modelo</th>
+                        <th>Servidores</th>
+                        <th>Capacidad</th>
+                        <th>Población</th>
+                        <th>Condición de Estabilidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>M/M/1</strong></td>
+                        <td>1</td>
+                        <td>∞</td>
+                        <td>∞</td>
+                        <td>ρ = λ/μ < 1</td>
+                    </tr>
+                    <tr>
+                        <td><strong>M/M/c</strong></td>
+                        <td>c</td>
+                        <td>∞</td>
+                        <td>∞</td>
+                        <td>ρ = λ/(cμ) < 1</td>
+                    </tr>
+                    <tr>
+                        <td><strong>M/M/1/K</strong></td>
+                        <td>1</td>
+                        <td>K</td>
+                        <td>∞</td>
+                        <td>Siempre estable</td>
+                    </tr>
+                    <tr>
+                        <td><strong>M/M/c/K</strong></td>
+                        <td>c</td>
+                        <td>K</td>
+                        <td>∞</td>
+                        <td>Siempre estable</td>
+                    </tr>
+                    <tr>
+                        <td><strong>M/M/1//N</strong></td>
+                        <td>1</td>
+                        <td>∞</td>
+                        <td>N</td>
+                        <td>Siempre estable</td>
+                    </tr>
+                    <tr>
+                        <td><strong>M/M/∞</strong></td>
+                        <td>∞</td>
+                        <td>∞</td>
+                        <td>∞</td>
+                        <td>Siempre estable</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Fórmulas de Little -->
+        <div class="section">
+            <h2>⚖️ Fórmulas de Little</h2>
+
+            <div class="definition-box">
+                <div class="definition-title">
+                    <span>🎓</span>
+                    <span>Ley de Little (Little's Law)</span>
+                </div>
+                <p style="font-size: 1.15em; line-height: 1.8;">
+                    Las <strong>Fórmulas de Little</strong> son relaciones fundamentales en teoría de colas que conectan el número promedio 
+                    de clientes en un sistema con el tiempo promedio que pasan en él. Son válidas para <span class="highlight">cualquier sistema 
+                    en estado estacionario</span>, independientemente de las distribuciones de llegada y servicio.
+                </p>
+            </div>
+
+            <div class="model-section">
+                <h3>📐 Las Tres Fórmulas Fundamentales</h3>
+
+                <div class="formula-box">
+<span class="formula-title">1. Ley de Little para el Sistema Completo</span>
+L = λ × W
+
+Donde:
+L = Número promedio de clientes en el sistema
+λ = Tasa de llegada efectiva
+W = Tiempo promedio en el sistema
+
+Interpretación: El número promedio de clientes en el sistema es igual 
+a la tasa de llegada multiplicada por el tiempo promedio que pasan.
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">2. Ley de Little para la Cola</span>
+Lq = λ × Wq
+
+Donde:
+Lq = Número promedio de clientes en cola (esperando)
+λ = Tasa de llegada efectiva
+Wq = Tiempo promedio en cola (esperando)
+
+Interpretación: El número promedio esperando es igual a la tasa 
+de llegada multiplicada por el tiempo promedio de espera.
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">3. Relación entre Sistema y Cola</span>
+W = Wq + (1/μ)
+L = Lq + ρ
+
+Donde:
+1/μ = Tiempo promedio de servicio
+ρ = λ/μ = Número promedio siendo atendidos
+
+Interpretación: El tiempo total es la suma del tiempo de espera 
+más el tiempo de servicio.
+                </div>
+            </div>
+
+            <h3>🎯 Propiedades de las Fórmulas de Little</h3>
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-icon">🌍</div>
+                    <div class="card-title">Universalidad</div>
+                    <div class="card-content">
+                        <p>Válidas para cualquier distribución de llegadas y servicios</p>
+                        <p>No requieren supuestos de Poisson o exponencial</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">⚖️</div>
+                    <div class="card-title">Estado Estacionario</div>
+                    <div class="card-content">
+                        <p>Solo requieren que el sistema esté en equilibrio</p>
+                        <p>Las tasas de entrada y salida deben ser iguales</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🔗</div>
+                    <div class="card-title">Relaciones</div>
+                    <div class="card-content">
+                        <p>Conectan métricas de cantidad (L, Lq) con métricas de tiempo (W, Wq)</p>
+                        <p>Permiten calcular unas a partir de otras</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🎨</div>
+                    <div class="card-title">Simplicidad</div>
+                    <div class="card-content">
+                        <p>Fórmulas algebraicas simples</p>
+                        <p>Fáciles de aplicar y recordar</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>📊 Ejemplo de Aplicación</h3>
+            <div class="example-box">
+                <div class="example-title">🏪 Problema: Supermercado</div>
+                <p style="font-size: 1.1em; line-height: 1.8;">
+                    En un supermercado, se observa que en promedio hay <strong>15 clientes</strong> en el sistema (esperando + siendo atendidos). 
+                    Los clientes llegan a una tasa de <strong>30 clientes por hora</strong>. 
+                    ¿Cuánto tiempo pasa un cliente en promedio en el supermercado?
+                </p>
+
+                <div class="formula-box">
+<span class="formula-title">📊 Solución usando Ley de Little</span>
+
+Datos:
+L = 15 clientes (número promedio en el sistema)
+λ = 30 clientes/hora (tasa de llegada)
+W = ? (tiempo promedio en el sistema)
+
+Aplicando L = λ × W:
+15 = 30 × W
+W = 15/30 = 0.5 horas = 30 minutos
+
+Respuesta: Un cliente pasa en promedio 30 minutos en el supermercado.
+                </div>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">🏥 Problema: Sala de Emergencias</div>
+                <p style="font-size: 1.1em; line-height: 1.8;">
+                    En una sala de emergencias, los pacientes esperan en promedio <strong>45 minutos</strong> antes de ser atendidos. 
+                    La tasa de llegada es de <strong>8 pacientes por hora</strong>. 
+                    ¿Cuántos pacientes hay en promedio esperando?
+                </p>
+
+                <div class="formula-box">
+<span class="formula-title">📊 Solución usando Ley de Little para la Cola</span>
+
+Datos:
+Wq = 45 minutos = 0.75 horas (tiempo promedio en cola)
+λ = 8 pacientes/hora (tasa de llegada)
+Lq = ? (número promedio en cola)
+
+Aplicando Lq = λ × Wq:
+Lq = 8 × 0.75 = 6 pacientes
+
+Respuesta: Hay en promedio 6 pacientes esperando ser atendidos.
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>💡 Aplicaciones Prácticas de las Fórmulas de Little:</strong>
+                <ul>
+                    <li>✓ Estimar tiempos de espera a partir de observaciones de cantidad de clientes</li>
+                    <li>✓ Calcular el número de clientes esperado dado un tiempo de servicio objetivo</li>
+                    <li>✓ Validar modelos de simulación (las fórmulas deben cumplirse)</li>
+                    <li>✓ Dimensionar sistemas (cuántos servidores se necesitan)</li>
+                    <li>✓ Análisis de capacidad y planificación de recursos</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Análisis de Estabilidad -->
+        <div class="section">
+            <h2>⚖️ Análisis de Estabilidad</h2>
+
+            <div class="definition-box">
+                <div class="definition-title">
+                    <span>⚠️</span>
+                    <span>¿Qué es la Estabilidad de un Sistema?</span>
+                </div>
+                <p style="font-size: 1.15em; line-height: 1.8;">
+                    Un sistema de colas es <strong>estable</strong> cuando puede procesar a todos los clientes que llegan sin que la cola 
+                    crezca indefinidamente. En otras palabras, la <span class="highlight">tasa de servicio debe ser mayor que la tasa de llegada</span>.
+                </p>
+            </div>
+
+            <h3>📐 Condición de Estabilidad</h3>
+            <div class="model-section">
+                <div class="formula-box">
+<span class="formula-title">Condición Fundamental de Estabilidad</span>
+
+Para un sistema M/M/1:
+ρ = λ/μ < 1
+
+Equivalentemente:
+λ < μ
+
+Donde:
+ρ = Factor de utilización
+λ = Tasa de llegada
+μ = Tasa de servicio
+
+Si ρ ≥ 1: Sistema INESTABLE (cola crece sin límite)
+Si ρ < 1: Sistema ESTABLE (cola se mantiene finita)
+                </div>
+
+                <div class="formula-box">
+<span class="formula-title">Para un sistema M/M/c (múltiples servidores):</span>
+
+ρ = λ/(c×μ) < 1
+
+Equivalentemente:
+λ < c×μ
+
+Donde:
+c = Número de servidores
+                </div>
+            </div>
+
+            <h3>📊 Interpretación del Factor de Utilización (ρ)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Valor de ρ</th>
+                        <th>Estado del Sistema</th>
+                        <th>Interpretación</th>
+                        <th>Acción Recomendada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #c8e6c9;">
+                        <td><strong>ρ < 0.5</strong></td>
+                        <td>Subutilizado</td>
+                        <td>Servidor ocioso más del 50% del tiempo</td>
+                        <td>Considerar reducir capacidad o consolidar servicios</td>
+                    </tr>
+                    <tr style="background: #fff9c4;">
+                        <td><strong>0.5 ≤ ρ < 0.7</strong></td>
+                        <td>Utilización moderada</td>
+                        <td>Buen balance entre eficiencia y servicio</td>
+                        <td>Rango óptimo para muchas aplicaciones</td>
+                    </tr>
+                    <tr style="background: #ffe0b2;">
+                        <td><strong>0.7 ≤ ρ < 0.9</strong></td>
+                        <td>Alta utilización</td>
+                        <td>Servidor muy ocupado, tiempos de espera crecientes</td>
+                        <td>Monitorear de cerca, considerar capacidad adicional</td>
+                    </tr>
+                    <tr style="background: #ffccbc;">
+                        <td><strong>0.9 ≤ ρ < 1</strong></td>
+                        <td>Saturación</td>
+                        <td>Tiempos de espera muy largos, sistema al límite</td>
+                        <td>Urgente: agregar capacidad</td>
+                    </tr>
+                    <tr style="background: #ffcdd2;">
+                        <td><strong>ρ ≥ 1</strong></td>
+                        <td>INESTABLE</td>
+                        <td>Cola crece sin límite, colapso del sistema</td>
+                        <td>CRÍTICO: sistema no viable</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>📈 Comportamiento de las Métricas según ρ</h3>
+            <div class="info-box">
+                <p><strong>A medida que ρ se acerca a 1:</strong></p>
+                <ul style="font-size: 1.1em;">
+                    <li>📈 <strong>L y Lq → ∞</strong> (número de clientes crece sin límite)</li>
+                    <li>⏱️ <strong>W y Wq → ∞</strong> (tiempos de espera crecen sin límite)</li>
+                    <li>⚠️ <strong>Pequeños aumentos en λ causan grandes aumentos en espera</strong></li>
+                    <li>🔴 <strong>El sistema se vuelve extremadamente sensible</strong></li>
+                </ul>
+            </div>
+
+            <h3>🔍 Ejemplos de Análisis de Estabilidad</h3>
+
+            <div class="example-box">
+                <div class="example-title">✅ Ejemplo 1: Sistema Estable</div>
+                <div class="formula-box">
+Datos:
+λ = 20 clientes/hora
+μ = 30 clientes/hora
+
+Análisis:
+ρ = λ/μ = 20/30 = 0.667
+
+Conclusión: ρ = 0.667 < 1 → Sistema ESTABLE ✓
+- El servidor está ocupado el 66.7% del tiempo
+- Hay un 33.3% de tiempo ocioso
+- Las métricas L, Lq, W, Wq son finitas y calculables
+- Sistema operando en rango aceptable
+                </div>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">⚠️ Ejemplo 2: Sistema en Saturación</div>
+                <div class="formula-box">
+Datos:
+λ = 28 clientes/hora
+μ = 30 clientes/hora
+
+Análisis:
+ρ = λ/μ = 28/30 = 0.933
+
+Conclusión: ρ = 0.933 < 1 → Sistema ESTABLE pero SATURADO ⚠️
+- El servidor está ocupado el 93.3% del tiempo
+- Solo 6.7% de tiempo ocioso
+- Tiempos de espera muy largos:
+  L = 0.933/(1-0.933) = 13.9 clientes
+  W = 1/(30-28) = 0.5 horas = 30 minutos
+- RECOMENDACIÓN: Agregar capacidad urgentemente
+                </div>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">❌ Ejemplo 3: Sistema Inestable</div>
+                <div class="formula-box">
+Datos:
+λ = 35 clientes/hora
+μ = 30 clientes/hora
+
+Análisis:
+ρ = λ/μ = 35/30 = 1.167
+
+Conclusión: ρ = 1.167 > 1 → Sistema INESTABLE ❌
+- La tasa de llegada excede la capacidad de servicio
+- La cola crece sin límite con el tiempo
+- Las fórmulas de estado estacionario NO APLICAN
+- El sistema colapsará eventualmente
+- ACCIÓN CRÍTICA: Rediseñar el sistema completamente
+  * Agregar más servidores
+  * Aumentar la tasa de servicio
+  * Reducir la tasa de llegada
+  * Implementar sistema de citas/reservas
+                </div>
+            </div>
+
+            <h3>🛠️ Estrategias para Mejorar la Estabilidad</h3>
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-icon">➕</div>
+                    <div class="card-title">Aumentar Capacidad</div>
+                    <div class="card-content">
+                        <ul>
+                            <li>Agregar más servidores (M/M/c)</li>
+                            <li>Aumentar velocidad de servicio (↑μ)</li>
+                            <li>Extender horarios de operación</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📉</div>
+                    <div class="card-title">Reducir Demanda</div>
+                    <div class="card-content">
+                        <ul>
+                            <li>Sistema de citas/reservas</li>
+                            <li>Distribuir llegadas en el tiempo</li>
+                            <li>Incentivos para horas valle</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Optimizar Procesos</div>
+                    <div class="card-content">
+                        <ul>
+                            <li>Automatización de tareas</li>
+                            <li>Capacitación del personal</li>
+                            <li>Mejora de procedimientos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-title">Gestión de Prioridades</div>
+                    <div class="card-content">
+                        <ul>
+                            <li>Colas prioritarias</li>
+                            <li>Servicio diferenciado</li>
+                            <li>Fast-track para casos simples</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Advertencia Importante:</strong>
+                <p style="margin-top: 10px; font-size: 1.1em;">
+                    Nunca diseñes un sistema con ρ muy cercano a 1 (por ejemplo, ρ > 0.9). Aunque matemáticamente sea estable, 
+                    en la práctica será extremadamente sensible a variaciones y tendrá tiempos de espera inaceptables. 
+                    Un buen diseño típicamente apunta a <strong>ρ entre 0.6 y 0.8</strong>.
+                </p>
+            </div>
+        </div>
+
+        <!-- Métricas de Desempeño -->
+        <div class="section">
+            <h2>📊 Métricas de Desempeño</h2>
+
+            <div class="definition-box">
+                <div class="definition-title">
+                    <span>📈</span>
+                    <span>¿Qué son las Métricas de Desempeño?</span>
+                </div>
+                <p style="font-size: 1.15em; line-height: 1.8;">
+                    Las <strong>métricas de desempeño</strong> son indicadores cuantitativos que nos permiten evaluar qué tan bien está 
+                    funcionando un sistema de colas. Nos ayudan a tomar decisiones sobre diseño, capacidad y mejoras del sistema.
+                </p>
+            </div>
+
+            <h3>📋 Clasificación de Métricas</h3>
+
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-icon">👥</div>
+                    <div class="card-title">Métricas de Cantidad</div>
+                    <div class="card-content">
+                        <p><strong>L:</strong> Número promedio en el sistema</p>
+                        <p><strong>Lq:</strong> Número promedio en cola</p>
+                        <p><strong>Ls:</strong> Número promedio siendo atendidos</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">⏱️</div>
+                    <div class="card-title">Métricas de Tiempo</div>
+                    <div class="card-content">
+                        <p><strong>W:</strong> Tiempo promedio en el sistema</p>
+                        <p><strong>Wq:</strong> Tiempo promedio en cola</p>
+                        <p><strong>Ws:</strong> Tiempo promedio de servicio</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Métricas de Utilización</div>
+                    <div class="card-content">
+                        <p><strong>ρ:</strong> Factor de utilización</p>
+                        <p><strong>P(0):</strong> Probabilidad de sistema vacío</p>
+                        <p><strong>P(n):</strong> Probabilidad de n clientes</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">💰</div>
+                    <div class="card-title">Métricas Económicas</div>
+                    <div class="card-content">
+                        <p><strong>Costo de espera:</strong> Cw × Lq</p>
+                        <p><strong>Costo de servicio:</strong> Cs × c</p>
+                        <p><strong>Costo total:</strong> Suma de ambos</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>📐 Tabla Completa de Fórmulas (Modelo M/M/1)</h3>
+            <tabl
