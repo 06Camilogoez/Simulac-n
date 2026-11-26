@@ -8,97 +8,92 @@ Repositorio academico para la asignatura **Simulacion de Procesos Estocasticos**
 
 ---
 
-## Estructura del Repositorio
+## Estructura Integral de Entregas del Curso
 
-El proyecto contiene el desarrollo completo, reproducible y documentado de las tres entregas del curso:
+El repositorio contiene el desarrollo completo, reproducible y documentado de las cuatro actividades evaluativas del curso:
 
 1. **Entrega 1: Simulacion Monte Carlo** (`ValenciaGoez_WilfranCamilo_Montecarlo.docx`, `web/`)
 2. **Entrega 2: Modelos Ocultos de Markov (HMM)** (`ValenciaGoez_WilfranCamilo_HMM_Q1.docx`, `src/hmm_model.py`, `src/simulate_experiments.py`)
 3. **Entrega 3: Teoria de Colas M/M/1 - Banco de Colombia** (`ValenciaGoez_WilfranCamilo_problemaBancario.docx`, `src/bank_queue_simulation.py`, `resultados_simulacion_banco.xlsx`)
+4. **Actividad Final: Simulacion de Colas M/M/1 - Parqueadero Supercentro** (`ValenciaGoez_WilfranCamilo_problemaParqueadero.docx`, `src/parking_simulation.py`, `ValenciaGoez_WilfranCamilo_problemaParqueadero.xlsx`)
 
 ---
 
-## Entrega 3: Simulacion de Sistemas de Colas M/M/1 - Banco de Colombia
+## Actividad Final: Simulacion de Colas M/M/1 - Parqueadero Supercentro
 
-### 1. Descripcion del Caso y Problema Operativo
+### 1. Descripcion del Problema y Objetivos
 
-El Banco de Colombia necesita evaluar el desempeno de sus tres cajas de atencion presencial para pagos y retiros en una sucursal que no cuenta con cajeros electronicos (ATM).
-El 70 % de los ciudadanos acude a realizar retiros, mientras que el 30 % realiza pagos o consignaciones.
-El banco desea determinar la configuracion optima de atencion:
-* Asignar 1 caja exclusiva para retiros y 2 para pagos, o viceversa (2 cajas para retiros y 1 para pagos).
-* Evaluar el desempeno frente a un esquema de cajas mixtas y la factibilidad de incorporar un cajero automatico (ATM).
+El sistema de pago del parqueadero del centro comercial Supercentro opera con tres (3) cajeros electronicos en cada punto de salida. El software de cobro permite al usuario digitar la placa del vehiculo, seleccionarlo y efectuar el pago. Cada cajero cuenta con una fila independiente, sin posibilidad de cambio de fila (sin jockeying) ni abandono del sistema (sin desercion).
 
-### 2. Formulacion Matematica del Sistema de Colas
+El objetivo consiste en evaluar si la dotacion actual de tres cajeros es suficiente para suplir la demanda o si es necesario instalar cajeros adicionales debido a la presencia de usuarios lentos y muy lentos (quienes representan el 55 % de los clientes).
 
-Cada servidor opera bajo el modelo de colas markoviano M/M/1:
-* **Tiempos entre llegadas (A):** Distribucion exponencial con parametro lambda: T ~ Exp(lambda)
-* **Tiempos de atencion (S):** Distribucion exponencial con parametro mu: S ~ Exp(mu)
-* **Factor de utilizacion:** rho = lambda / mu (condicion de estabilidad rho < 1)
-* **Formulas de Little:**
-  * L = lambda * W (Clientes promedio en el sistema)
-  * Lq = lambda * Wq (Clientes promedio en cola)
-  * W = Wq + (1 / mu) (Tiempo total medio en el sistema)
+### 2. Parametrizacion Estocastica de la Poblacion
 
-### 3. Configuraciones Evaluadas (10 Replicas de 8 Horas = 480 Minutos)
+La poblacion vehicular se clasifica en cuatro perfiles de usuario gobernados por distribuciones exponenciales de servicio y llegada:
+* **Rapido (25 %):** Servicio medio = 1.0 min, Llegada media = 3.0 min.
+* **Normal (20 %):** Servicio medio = 3.0 min, Llegada media = 3.0 min.
+* **Lento (30 %):** Servicio medio = 4.0 min, Llegada media = 5.0 min.
+* **Muy Lento (25 %):** Servicio medio = 6.0 min, Llegada media = 7.0 min.
 
-1. **Configuracion 1 (1 Retiro + 2 Pagos):** 1 caja exclusiva para retiros y 2 cajas exclusivas para pagos.
-2. **Configuracion 2 (2 Retiros + 1 Pago):** 2 cajas exclusivas para retiros y 1 caja exclusiva para pagos.
-3. **Configuracion 3 (3 Cajas Mixtas):** 3 cajas polivalentes atendiendo ambos tipos de tramites con cola unificada.
-4. **Configuracion 4 (4 Cajas / Cajero Electronico):** 4 cajas operativas o incorporacion de ATM para retiros simples.
+Valores analiticos esperados globales:
+* Tiempo medio de servicio ponderado: E[S] = 3.55 minutos (tasa mu = 0.2817 cl/min por cajero).
+* Tiempo medio entre llegadas ponderado: E[A] = 4.60 minutos (tasa lambda_total = 0.2174 cl/min).
+* Factor de utilizacion analitico esperado: rho_i = (lambda_total / 3) * E[S] = 0.2574 (25.74 %).
 
-### 4. Resumen Cuantitativo de Resultados (Promedio 10 Replicas)
+### 3. Deteccion de Estado Estable y Eliminacion del Estado Transitorio (Metodo de Welch)
 
-| Configuracion Operativa | Clientes Atendidos | Tiempo Espera Cola Wq (min) | Tiempo en Sistema W (min) | Longitud Cola Lq (clientes) | Utilizacion Media rho (%) |
+Para eliminar el sesgo de inicializacion en frio (sistema que arranca vacio en t = 0):
+* Se ejecutaron 30 replicas independientes de 250 clientes atendidos.
+* Se calculo el promedio de ensamble Y_barra_t y se aplico una media movil suavizada de ventana w = 15.
+* Se determino el punto de corte del periodo de calentamiento (warm-up) en d = 40 clientes atendidos (~45-60 min).
+* **Antes y Despues (Figura 1):** La serie 'Antes' (con transitorio) subestima la espera real partiendo de cero, mientras que la serie 'Despues' (truncada en d = 40) estabiliza la metrica de espera en estado estacionario alrededor de Wq = 1.30 minutos.
+
+### 4. Resumen Cuantitativo de Escenarios Evaluados (15 Replicas de 12 Horas = 720 Minutos)
+
+| Escenario Operacional | Clientes Atendidos | Espera Cola Wq (min) | Tiempo Sistema W (min) | Cola Media Lq (veh) | Utilizacion rho (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Configuracion 1 (1R + 2P)** | 198.90 ± 19.12 | 4.22 ± 2.16 | 7.33 ± 2.34 | 1.80 | 42.97 % |
-| **Configuracion 2 (2R + 1P)** | 199.20 ± 19.34 | 2.97 ± 0.97 | 6.15 ± 0.99 | 1.25 | 43.94 % |
-| **Configuracion 3 (3 Mixtas)** | 201.90 ± 19.85 | 0.52 ± 0.31 | 3.74 ± 0.69 | 0.21 | 45.15 % |
-| **Configuracion 4 (4 Cajas)** | 202.00 ± 19.64 | 0.47 ± 0.26 | 3.70 ± 0.55 | 0.20 | 33.74 % |
+| **E1: Actual (3 Cajeros Independientes)** | 148.87 ± 12.59 | 1.30 ± 0.31 | 4.76 ± 0.56 | 0.27 | 23.77 % |
+| **E2: Mejora (3 Cajeros con Cola Unica / Pooling)** | 159.07 ± 8.38 | 0.11 ± 0.13 | 3.66 ± 0.40 | 0.03 | 26.13 % |
+| **E3: Ampliacion (4 Cajeros Independientes)** | 151.80 ± 13.63 | 1.12 ± 0.31 | 4.73 ± 0.52 | 0.24 | 19.06 % |
+| **E4: Estrategia (Caja Rapida Especializada)** | 154.73 ± 15.93 | 0.63 ± 0.40 | 4.05 ± 0.62 | 0.14 | 24.65 % |
 
-### 5. Respuestas a los Puntos del Laboratorio
+### 5. Respuestas a los Puntos de la Rubrica
 
-* **Punto 1 (Cajero mas rapido y mas lento):**
-  * *Cajero mas rapido:* Cajero 2 (Retiros), con tiempo medio de servicio de **2.28 ± 0.48 minutos**.
-  * *Cajero mas lento:* Cajero 3 (Pagos y Consignaciones), con tiempo medio de servicio de **5.23 ± 0.65 minutos** debido a la mayor complejidad de las consignaciones.
-* **Punto 2 (Promedio de usuarios por tipo):**
-  * *Rapido:* 40.40 ± 10.27 usuarios (20.28 %)
-  * *Normal:* 70.40 ± 10.49 usuarios (35.34 %, grupo mayoritario)
-  * *Lento:* 37.90 ± 7.03 usuarios (19.03 %)
-  * *Muy Lento:* 50.50 ± 6.00 usuarios (25.35 %)
-* **Punto 3 (Total de usuarios por replica y modelo menor):**
-  * La Replica 8 registro la menor afluencia global con 177 clientes (24 rapidos, 70 normales, 27 lentos, 56 muy lentos).
-  * La Configuracion 1 presento el menor volumen atendido promedio (198.9 clientes) por represamiento en la unica caja de retiros.
-* **Punto 4 (Necesidad de nuevo cajero):**
-  * *4to cajero humano:* NO es necesario. La espera actual en Cajas Mixtas es de solo 0.52 min y en 2R+1P es de 2.97 min con utilizaciones menores al 63 %. Un 4to cajero fisico generaria un 66.26 % de capacidad ociosa.
-  * *Cajero electronico (ATM):* SI se recomienda firmemente para absorber el 63 % de los retiros simples (usuarios rapidos y normales), eliminando colas y reduciendo costos operativos.
-* **Punto 5 (Decision de asignacion optima):**
-  * Bajo cajas especializadas, se deben asignar **DOS (2) CAJAS PARA RETIROS Y UNA (1) PARA PAGOS**, ya que reduce la espera en un 29.6 % frente a la configuracion inversa.
-  * La politica mas eficiente de todas corresponde a **TRES (3) CAJAS MIXTAS** con cola unica (espera media de 31 segundos).
-
----
-
-## Replicas Necesarias para el Modelo
-
-Aplicando la formula de tamano muestral para simulacion con nivel de confianza del 95 % (z = 1.96) y error relativo admisible del 10 %:
-n >= [ (z_{alpha/2} * s) / E ]^2
-Para la Configuracion 2 (s = 0.97, E = 0.297), se requieren 42 replicas para una precision rigurosa del 10 %, y 10.2 replicas para un margen del 20 %. Las 10 replicas ejecutadas de 480 minutos cubren 4,800 minutos de operacion y satisfacen los estandares de precision operativa.
+* **Punto 1 (Cajero con menor y mayor tiempo de atencion):**
+  * *Cajero con menor tiempo:* Cajero 3, con tiempo medio de servicio de **3.27 ± 0.42 minutos** (IC 95%: [3.06, 3.48], 50.60 clientes, rho = 23.08 %).
+  * *Cajero con mayor tiempo:* Cajero 2, con tiempo medio de servicio de **3.63 ± 0.60 minutos** (IC 95%: [3.33, 3.93], 49.13 clientes, rho = 24.56 %).
+  * El Cajero 1 promedia 3.50 ± 0.62 minutos (rho = 23.66 %).
+* **Punto 2 (Promedio de usuarios de cada tipo en la totalidad de cajeros):**
+  * *Rapidos (25 %):* 37.00 ± 7.43 clientes/dia (24.85 %).
+  * *Normales (20 %):* 29.00 ± 7.07 clientes/dia (19.48 %).
+  * *Lentos (30 %):* 46.27 ± 8.22 clientes/dia (31.08 %).
+  * *Muy Lentos (25 %):* 36.60 ± 4.14 clientes/dia (24.58 %).
+  * Total promedio diario atendido: 148.87 ± 12.59 vehiculos en 12 horas.
+* **Punto 3 (Estrategia y decision de capacidad):**
+  * *¿Son suficientes 3 cajeros?:* SI, la capacidad es suficiente (utilizacion media del 23.77 % y espera promedio de 1.30 min). Instalar un 4to cajero fisico (E3) solo reduce la espera en 10 segundos y desploma la utilizacion al 19.06 %, generando mas del 80 % de capacidad ociosa.
+  * *Estrategia Optima de Mejora (E2):* Transformar las 3 filas independientes en una **cola unica unificada (pooling M/M/3)**. Reduce la espera en un 91.5 % (a solo 0.11 min = 6.6 segundos) con cero inversion en hardware.
+  * *Estrategia Tecnologica:* Incorporar pago digital por codigo QR en el tique o lectura automatica de placas (LPR) para canalizar el 45 % de usuarios agiles por medios moviles.
+* **Punto 4 (Proceso de Verificacion, Calibracion y Validacion - VV&A):**
+  * Documentado formalmente con balance de flujo, verificacion de disciplina FIFO, calibracion exponencial y validacion mediante intervalos de confianza al 95 % (Figura 5).
+* **Punto 5 (Eliminacion del transitorio y grafica antes/despues):**
+  * Algoritmo de Welch implementado con truncacion en d = 40 y media movil w = 15, graficado en Figura 1.
 
 ---
 
-## Instrucciones de Ejecucion y Reproduccion
+## Instrucciones de Reproduccion
 
 ### 1. Requisitos
 * Python 3.10 o superior
-* Librerias: `numpy`, `pandas`, `matplotlib`, `openpyxl`, `python-docx`
+* Dependencias: `numpy`, `pandas`, `matplotlib`, `openpyxl`, `python-docx`
 
-### 2. Ejecutar Simulacion de Colas
+### 2. Ejecutar Simulacion del Parqueadero
 ```bash
-python src/bank_queue_simulation.py
+python src/parking_simulation.py
 ```
-Genera la base de datos completa en Excel `resultados_simulacion_banco.xlsx` y las figuras cientificas a 300 DPI en `results/`.
+Genera la base de datos Excel `ValenciaGoez_WilfranCamilo_problemaParqueadero.xlsx` y las 5 figuras en 300 DPI en `results/`.
 
 ### 3. Generar Documento en Normas APA 7ma Edicion
 ```bash
-python generate_bank_paper_apa.py
+python generate_parking_paper_apa.py
 ```
-Genera el informe formal en formato Word: `ValenciaGoez_WilfranCamilo_problemaBancario.docx`.
+Genera el informe formal en formato Word: `ValenciaGoez_WilfranCamilo_problemaParqueadero.docx` (y su version PDF `ValenciaGoez_WilfranCamilo_problemaParqueadero.pdf`).
